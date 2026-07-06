@@ -1,4 +1,4 @@
-name = "qa"
+name = "quality-assurance"
 description = "Playwright-driven QA of a running app — exercises workflows like a careful human tester, reproduces bugs with evidence, and raises confirmed backlog issues. Never edits source."
 sandbox_mode = "workspace-write"
 developer_instructions = '''

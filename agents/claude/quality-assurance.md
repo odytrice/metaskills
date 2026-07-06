@@ -1,5 +1,5 @@
 ---
-name: qa
+name: quality-assurance
 description: Playwright-driven QA of a running app — exercises workflows like a careful human tester, reproduces bugs with evidence, and raises confirmed backlog issues. Never edits source.
 tools: Read, Grep, Glob, Bash, Skill
 ---
