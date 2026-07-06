@@ -23,6 +23,7 @@ $targets = @{
     OpencodeCommand = Join-Path $env:USERPROFILE '.config\opencode\command'
     CodexSkills     = Join-Path $env:USERPROFILE '.codex\skills'
     CodexPrompts    = Join-Path $env:USERPROFILE '.codex\prompts'
+    CodexAgents     = Join-Path $env:USERPROFILE '.codex\agents'
 }
 
 foreach ($dir in $targets.Values) {
@@ -69,7 +70,7 @@ foreach ($cmd in $commands) {
 }
 Write-Host ("Commands installed: " + (($commands | ForEach-Object BaseName) -join ', '))
 
-# --- Agents: per-harness dialects (Codex has no subagents) ------------------
+# --- Agents: per-harness dialects --------------------------------------------
 $opencodeAgents = Get-ChildItem (Join-Path $repo 'agents\opencode') -Filter '*.md'
 foreach ($agent in $opencodeAgents) {
     Install-File $agent.FullName $targets.OpencodeAgents
@@ -78,7 +79,11 @@ $claudeAgents = Get-ChildItem (Join-Path $repo 'agents\claude') -Filter '*.md'
 foreach ($agent in $claudeAgents) {
     Install-File $agent.FullName $targets.ClaudeAgents
 }
-Write-Host ("Agents installed: opencode(" + (($opencodeAgents | ForEach-Object BaseName) -join ', ') + ") claude(" + (($claudeAgents | ForEach-Object BaseName) -join ', ') + ")")
+$codexAgents = Get-ChildItem (Join-Path $repo 'agents\codex') -Filter '*.toml'
+foreach ($agent in $codexAgents) {
+    Install-File $agent.FullName $targets.CodexAgents
+}
+Write-Host ("Agents installed: opencode(" + (($opencodeAgents | ForEach-Object BaseName) -join ', ') + ") claude(" + (($claudeAgents | ForEach-Object BaseName) -join ', ') + ") codex(" + (($codexAgents | ForEach-Object BaseName) -join ', ') + ")")
 
 Write-Host 'Done. Remember: each project needs an AGENTS.md that satisfies AGENTS.template.md,'
 Write-Host 'and (for Claude Code) a CLAUDE.md whose first line is @AGENTS.md.'

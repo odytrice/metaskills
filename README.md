@@ -7,11 +7,11 @@ across three coding-agent harnesses with as much parity as each allows:
 |---|---|---|---|
 | **Skills** | `skills/<name>/` | `skill/<name>/` | `skills/<name>/` |
 | **Commands** | — (skills double as `/<name>` slash commands) | `command/*.md` | `prompts/*.md` |
-| **Agents** | `agents/*.md` (Claude dialect) | `agent/*.md` (opencode dialect) | — (no subagents; roles are carried by the skills) |
+| **Agents** | `agents/*.md` (Claude dialect) | `agent/*.md` (opencode dialect) | `agents/*.toml` (Codex dialect) |
 
 Skills are written once and installed verbatim into all three harnesses.
 Commands are thin `$ARGUMENTS` wrappers around same-named skills. Agent role
-definitions exist in two frontmatter dialects with near-identical bodies.
+definitions exist in three dialects with near-identical bodies.
 
 ## Design
 
@@ -34,8 +34,9 @@ own copy (e.g. a project-specific `agent-login`).
 skills/        one directory per skill (SKILL.md + supporting files)
 commands/      thin slash-command wrappers (shared text)
 agents/
-  opencode/    mode/permission frontmatter dialect
-  claude/      name/description/tools frontmatter dialect
+  opencode/    mode/permission frontmatter dialect (.md)
+  claude/      name/description/tools frontmatter dialect (.md)
+  codex/       name/description/developer_instructions dialect (.toml)
 AGENTS.template.md   the per-project AGENTS.md contract
 sync.ps1       installs everything into ~/.claude, ~/.config/opencode, ~/.codex
 ```
