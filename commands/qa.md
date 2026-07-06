@@ -1,0 +1,7 @@
+---
+description: QA the running app with Playwright and file reproducible bugs
+agent: qa
+---
+Act as the QA role: load the `agent-login` skill, drive the running app with Playwright against the staging environment from AGENTS.md (never production unless explicitly instructed), reproduce the behavior described by the arguments, and file only deterministically reproducible bugs using the repo issue template.
+
+$ARGUMENTS
