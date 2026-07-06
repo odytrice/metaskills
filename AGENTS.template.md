@@ -9,6 +9,16 @@ skill should say so and stop rather than guess.
 Claude Code note: the project must also have a `CLAUDE.md` whose first line is
 `@AGENTS.md` so the contract is loaded there too.
 
+**Static vs. detail files.** AGENTS.md is static context — every token is
+loaded into every session, whatever the task. Keep it lean. Sections that
+nearly every task needs (Project Overview, Code Layout & Tech Stack, Build &
+Validation, Project Board, Repositories, Environments, Branch Map) stay
+inline. Sections consumed by a single workflow (CI Pipeline, Review Notes,
+the detail of Agent Login) should be a few summary lines plus a pointer to a
+detail file under `Docs/agents/` (e.g. `Docs/agents/ci-pipeline.md`), which
+the relevant skill loads on demand. A skill reading a section that names a
+detail file MUST read that file before acting on the section.
+
 ---
 
 ## Project Overview
