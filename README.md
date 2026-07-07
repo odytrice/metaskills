@@ -39,6 +39,7 @@ agents/
   codex/       name/description/developer_instructions dialect (.toml)
 AGENTS.template.md   the per-project AGENTS.md contract
 sync.ps1       installs everything into ~/.claude, ~/.config/opencode, ~/.codex
+sync.sh        same installer for macOS/Linux
 ```
 
 ## The workflow the skills compose into
@@ -74,8 +75,13 @@ Core mechanics preserved from the best project variants:
 ## Install
 
 ```powershell
-.\sync.ps1          # install/update all three harnesses
+.\sync.ps1          # install/update all three harnesses (Windows)
 .\sync.ps1 -WhatIf  # preview
+```
+
+```bash
+./sync.sh           # install/update all three harnesses (macOS/Linux)
+./sync.sh --dry-run # preview
 ```
 
 The script only touches items this repo manages; other skills, agents, and
