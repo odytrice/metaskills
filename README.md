@@ -51,7 +51,7 @@ issue-raise -> issue-refine -> plan -> dev-cycle -> code-review -> deploy
 
 tracked on the project board as `Backlog -> Ready -> In progress -> In review -> Done`,
 with `burndown` as the batch orchestrator (one developer worker per issue, a
-separate architect reviewer per PR), `quality-assurance` driving Playwright against staging,
+separate architect reviewer per PR), `quality-assurance` driving the Playwright CLI against staging,
 `setup` provisioning environments, and `weekly-review` reporting.
 
 Core mechanics preserved from the best project variants:
