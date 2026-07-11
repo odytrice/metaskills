@@ -103,7 +103,7 @@ path and reason.
 ### Process
 
 1. Gather context.
-   - `gh pr view <number> --json title,body,files,commits,baseRefName,headRefName,url`
+   - `gh pr view <number> --json title,body,files,commits,baseRefName,headRefName,headRefOid,url`
    - `gh pr diff <number>`
    - `gh issue view <number>` for linked issues.
    - `git status --short` in the review worktree.
@@ -156,7 +156,12 @@ merging the base branch triggers (e.g. a deployment pipeline); do not merge if t
 wants to control deploy timing.
 
 After posting the comment and performing any eligible squash merge, report the PR
-comment URL, the merge commit if merged, and review worktree cleanup status.
+comment URL, the merge commit if merged, and review worktree and local branch cleanup
+status.
+
+After removing the review worktree, delete the local PR head branch if GitHub confirms the
+PR is merged and its tip still matches `headRefOid`. Force deletion is allowed for squash
+merges. Otherwise, leave the branch intact and report why.
 
 ---
 
