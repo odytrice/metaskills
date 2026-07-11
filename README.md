@@ -45,7 +45,7 @@ sync.sh        same installer for macOS/Linux
 ## The workflow the skills compose into
 
 ```
-issue-raise -> issue-refine -> plan -> dev-cycle -> code-review -> deploy
+issue-raise -> issue-refine -> issue-plan -> dev-cycle -> code-review -> deploy
    (create)     (-> Ready)    (claim,   (worktree,     (PR or        (gate,
                                ledger)   PR)            local mode)    ship, watch CI)
 ```

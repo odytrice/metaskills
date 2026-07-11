@@ -63,6 +63,24 @@ install_file() {
     fi
 }
 
+remove_legacy_path() {
+    local path="$1"
+    if [[ -e "$path" ]]; then
+        if $dry_run; then
+            echo "would remove legacy managed file -> $path"
+        else
+            rm -rf "$path"
+        fi
+    fi
+}
+
+# Remove legacy managed installs that were renamed in this repository.
+remove_legacy_path "$claude_skills/plan"
+remove_legacy_path "$opencode_skills/plan"
+remove_legacy_path "$codex_skills/plan"
+remove_legacy_path "$opencode_command/plan.md"
+remove_legacy_path "$codex_prompts/plan.md"
+
 # --- Skills: identical SKILL.md trees for all three harnesses ---------------
 skill_names=()
 for skill in "$repo"/skills/*/; do

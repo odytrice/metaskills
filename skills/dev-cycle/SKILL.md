@@ -44,10 +44,10 @@ If a section this skill needs is missing from `AGENTS.md`, say so and stop. Do n
 
 ## Plan Ledger Coordination
 
-Do not silently assume the `plan` skill ran. Check the issue's comments for a plan-ledger comment (first body line is `<!-- plan-ledger -->`):
+Do not silently assume the `issue-plan` skill ran. Check the issue's comments for a plan-ledger comment (first body line is `<!-- plan-ledger -->`):
 
-- **Ledger exists**: its checklist is the task list to execute. The issue was already claimed and moved to `In progress` by `plan` — do not repeat that transition. Track progress in that one comment: check tasks off as they are implemented, tested, and included in the branch; surface execution blockers in its `## Blockers` section. Re-fetch the comment immediately before editing so concurrent updates are not lost; edit it in place, never add a second plan comment.
-- **No ledger**: for a well-specified small task, proceed — this skill then owns the `In progress` transition itself (move the board item to `In progress` before implementation edits begin, using the status-as-lock discipline: only claim from `Ready`, re-read to confirm the transition took). For anything under-specified, stop and run `plan` (or `issue-refine`) first rather than opening a worktree to produce plausible-looking code on an ambiguous task.
+- **Ledger exists**: its checklist is the task list to execute. The issue was already claimed and moved to `In progress` by `issue-plan` — do not repeat that transition. Track progress in that one comment: check tasks off as they are implemented, tested, and included in the branch; surface execution blockers in its `## Blockers` section. Re-fetch the comment immediately before editing so concurrent updates are not lost; edit it in place, never add a second plan comment.
+- **No ledger**: for a well-specified small task, proceed — this skill then owns the `In progress` transition itself (move the board item to `In progress` before implementation edits begin, using the status-as-lock discipline: only claim from `Ready`, re-read to confirm the transition took). For anything under-specified, stop and run `issue-plan` (or `issue-refine`) first rather than opening a worktree to produce plausible-looking code on an ambiguous task.
 
 ## Worktree And PR Workflow
 
@@ -99,7 +99,7 @@ Before removing a worktree, verify the resolved path is inside the repo's `.work
 
 If the project uses a board (see `AGENTS.md` § Project Board), keep the issue item status synchronized:
 
-- If `plan` already moved the issue to `In progress` (a plan ledger exists), do not repeat that transition; otherwise this skill moves it to `In progress` before implementation begins.
+- If `issue-plan` already moved the issue to `In progress` (a plan ledger exists), do not repeat that transition; otherwise this skill moves it to `In progress` before implementation begins.
 - Move the issue to `In review` once the PR exists and is linked to the issue.
 
 Look up the live field/option IDs; never hardcode them. Resolve `<project-number>` and `<owner>` from § Project Board:

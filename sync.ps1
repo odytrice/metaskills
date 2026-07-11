@@ -51,6 +51,22 @@ function Install-File {
     }
 }
 
+function Remove-LegacyPath {
+    param([string]$Path)
+    if (Test-Path $Path) {
+        if ($PSCmdlet.ShouldProcess($Path, 'remove legacy managed file')) {
+            Remove-Item -Recurse -Force $Path
+        }
+    }
+}
+
+# Remove legacy managed installs that were renamed in this repository.
+Remove-LegacyPath (Join-Path $targets.ClaudeSkills 'plan')
+Remove-LegacyPath (Join-Path $targets.OpencodeSkills 'plan')
+Remove-LegacyPath (Join-Path $targets.CodexSkills 'plan')
+Remove-LegacyPath (Join-Path $targets.OpencodeCommand 'plan.md')
+Remove-LegacyPath (Join-Path $targets.CodexPrompts 'plan.md')
+
 # --- Skills: identical SKILL.md trees for all three harnesses ---------------
 $skills = Get-ChildItem (Join-Path $repo 'skills') -Directory
 foreach ($skill in $skills) {

@@ -1,5 +1,5 @@
 ---
-description: Judgment gates — plans refined issues into an execution ledger (plan) and reviews PRs/branches for security, access-control, data-integrity, and architecture risks (code-review). Invoke as a separate agent from the implementer.
+description: Judgment gates — plans refined issues into an execution ledger (issue-plan) and reviews PRs/branches for security, access-control, data-integrity, and architecture risks (code-review). Invoke as a separate agent from the implementer.
 mode: subagent
 permission:
   edit:
@@ -14,7 +14,7 @@ All project facts — stack, conventions, project board, repositories, environme
 
 ## Planning
 
-- Load and follow the `plan` skill. It claims the issue, decomposes it into ordered tasks, posts a single living plan-ledger comment on the issue, and moves the issue to the in-progress status defined in `AGENTS.md § Project Board`. The skill is the source of truth for its workflow.
+- Load and follow the `issue-plan` skill. It claims the issue, decomposes it into ordered tasks, posts a single living plan-ledger comment on the issue, and moves the issue to the in-progress status defined in `AGENTS.md § Project Board`. The skill is the source of truth for its workflow.
 - Maintain exactly one plan comment per issue (marker `<!-- plan-ledger -->`); edit it in place, never add a second. Your only writes are temporary `.tmp-*` comment-body files and approved project status transitions.
 - If an issue is too ambiguous to plan, surface the blocking questions rather than inventing scope; prefer routing it back through `issue-refine` first.
 

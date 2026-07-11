@@ -1,5 +1,5 @@
 ---
-name: plan
+name: issue-plan
 description: Turn a refined GitHub issue into an execution plan. Use when the user asks to plan an issue, break it into tasks, or prepare it for implementation. Claims the issue on the project board (Ready -> In progress), posts a single living plan-ledger comment on the issue, and keeps that one comment as the source of truth for execution state.
 ---
 
@@ -39,7 +39,7 @@ The plan is a single comment on the issue that holds the task checklist and refl
 
 ## Claim The Issue (status as lock)
 
-The issue's board status is the claim lock. `plan` only claims issues in `Ready` (use the actual option names from `AGENTS.md` § Project Board), and the move to `In progress` is the claim. This prevents two workers from picking up the same issue.
+The issue's board status is the claim lock. `issue-plan` only claims issues in `Ready` (use the actual option names from `AGENTS.md` § Project Board), and the move to `In progress` is the claim. This prevents two workers from picking up the same issue.
 
 - The claim is the first mutating action: move the issue `Ready -> In progress` immediately, before decomposing or posting any ledger.
 - Claim only from `Ready`. If the issue is in `Backlog`, it is not refined — stop and route it through `issue-refine` first. If it is already `In progress`, `In review`, or `Done` (and not your own prior plan run — an existing plan ledger is the tell), it is owned or finished — stop, report it as already claimed/owned, and do not touch its status or ledger.
