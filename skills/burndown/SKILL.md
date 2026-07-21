@@ -1,6 +1,6 @@
 ---
 name: burndown
-description: Triage, plan, execute, review, and merge a batch of GitHub issues from labels, milestones, issue lists, or a GitHub Projects status/column such as Ready, with a decision ledger, dependency ordering, developer worker delegation, architect PR review, board status transitions as the shared state machine, and validation.
+description: Triage, plan, execute, review, and merge a batch of GitHub issues from labels, milestones, issue lists, or a GitHub Projects status/column such as Ready, with a decision ledger, dependency ordering, developer worker delegation, architect PR review, board status transitions as the shared state machine, validation, and a closing QA sweep that exercises the merged work and files regressions back to the backlog.
 ---
 
 # GitHub Issue Burndown
@@ -13,6 +13,7 @@ This skill contains no project facts. Resolve every project-specific value from 
 - The base/integration branch for worktrees and PRs: **§ Branch Map**.
 - Build, test, lint commands and the DB tripwire file list: **§ Build & Validation**.
 - Project-specific review guidance: **§ Review Notes** (owned by `code-review`; do not re-list it here).
+- QA target environment and login for the closing QA sweep: **§ Environments** and **§ Agent Login** (owned by `quality-assurance`/`agent-login`). These are needed only for Phase 5; if the project has no running app to test, that phase is skipped with a note rather than stopped.
 
 If any required section is missing from `AGENTS.md`, say so and stop. Do not guess.
 
@@ -30,7 +31,7 @@ Scope selection, in order of precedence:
 
 - Do not close, relabel, or reassign issues without clear intent.
 - Do not mass-edit issues before the burndown plan is clear.
-- Do not push or deploy unless explicitly requested. Merging is governed by the merge policy in Phase 4: squash-merge automatically only when the review is clean (no Critical or High findings) and the `code-review` skill's auto-merge criteria are met; otherwise stop and ask.
+- Do not push or deploy unless explicitly requested. Merging is governed by the merge policy in Phase 4: squash-merge automatically only when the review is clean (no Critical or High findings) and the `code-review` skill's auto-merge criteria are met; when it is not clean, run the bounded revision loop in Phase 4 (at most two fix-and-re-review rounds) and never loop past that cap. A PR still blocked after the cap does not halt the batch: park it as manual intervention in the ledger and move on to the next non-blocking item, surfacing it in the Phase 6 report.
 - Do not move a project item to `Done` until the linked PR is merged and the issue's requested behavior is actually complete; prefer letting `Closes #<issue-number>` automation do it.
 - Do not rewrite an issue body except to check off completed task checkboxes or make an explicitly requested issue edit.
 - Work in small batches. If issues are independent, still keep each change scoped and reviewable.
@@ -39,7 +40,7 @@ Scope selection, in order of precedence:
 
 The coordinator (main context) owns triage, dependency ordering, the decision ledger, sequencing, board status transitions, final review acceptance, merge integration, and user reporting. It stays out of implementation detail.
 
-Fan out one **developer** worker agent per kept issue; each worker runs the `dev-cycle` skill. Fan out one **architect** review agent per PR; each runs the `code-review` skill.
+Fan out one **developer** worker agent per kept issue; each worker runs the `dev-cycle` skill. Fan out one **architect** review agent per PR; each runs the `code-review` skill. After the batch is integrated, spawn one **quality-assurance** agent for the closing QA sweep (Phase 5).
 
 Hard rules:
 
@@ -76,11 +77,11 @@ After each worker opens a PR, review it before moving to the next issue:
 
 - Spawn the `architect` agent (review-only; it must not edit product code) to run `code-review` against the PR from a separate review worktree — never the implementation worktree.
 - Post the review output as a PR comment.
-- If the review has any Critical or High finding, stop automation for that PR and mark the issue as requiring manual intervention in the ledger.
-- If the review is clean and the `code-review` skill's auto-merge criteria are met (required checks passed, PR mergeable, no Critical/High findings), the coordinator squash-merges and deletes the remote branch. If any auto-merge criterion is unmet, stop and ask the user; do not force it.
+- If the review has any Critical or High finding, do not stop outright and do not loop without limit: run the bounded revision loop (Phase 4). Dispatch the `developer` agent to fix the specific findings, then re-review from a fresh `architect` context scoped to those findings. Allow at most two such rounds; if the PR is still not clean after the second re-review, or a finding is contested between the two agents, park that PR as manual intervention in the ledger and move on to the next non-blocking issue or PR — do not halt the batch to wait on it.
+- If the review is clean and the `code-review` skill's auto-merge criteria are met (required checks passed, PR mergeable, no Critical/High findings), the coordinator squash-merges and deletes the remote branch. If any auto-merge criterion is unmet, do not force it: leave the PR for the user to merge, note it in the ledger, and move on to the next non-blocking item rather than halting the batch.
 - The coordinator merges; the review agent reports findings and comment status but does not merge.
 
-Review worktree, review checks, PR-comment shape, severity guide, and merge mechanics live in `code-review`; do not re-embed them here. Command shape, with `<base>` from `AGENTS.md` § Branch Map:
+Review worktree, review checks, PR-comment shape, severity guide, re-review convergence, and merge mechanics live in `code-review`; do not re-embed them here. Command shape, with `<base>` from `AGENTS.md` § Branch Map:
 
 ```powershell
 git fetch origin <base>
@@ -104,7 +105,7 @@ Merge command shape when criteria are met:
 gh pr merge <pr-number> --squash --delete-branch
 ```
 
-If branch protection, failed checks, conflicts, or permissions block the merge, stop that item and mark it for manual intervention. The PR body must end with `Closes #<issue-number>` as its final line for fully resolved issues so the merge closes the issue and project automation moves it to `Done`; reference the ticket only there.
+If branch protection, failed checks, conflicts, or permissions block the merge, park that item as manual intervention and move on to the next non-blocking item; do not halt the batch. The PR body must end with `Closes #<issue-number>` as its final line for fully resolved issues so the merge closes the issue and project automation moves it to `Done`; reference the ticket only there.
 
 ## Issue Checklist Updates
 
@@ -222,17 +223,29 @@ issue-<number>-<short-slug>
 
 ## Phase 4: Review And Integrate
 
-For each PR produced by Phase 3:
+Process the PRs from Phase 3 in dependency order. A PR that cannot be auto-resolved never halts the batch — park it and move on to the next non-blocking item (see the Bounded Revision Loop). For each PR:
 
 1. Create a separate review worktree from the base branch in `AGENTS.md` § Branch Map.
-2. Spawn an `architect` agent to run `code-review` against the PR (fresh context, no implementation history).
+2. Spawn an `architect` agent to run `code-review` against the PR (fresh context, no implementation history). This is review round 1.
 3. Post the review as a PR comment.
-4. If Critical or High findings exist, stop automation for that issue and mark manual intervention in the ledger.
-5. If the review is clean and the `code-review` auto-merge criteria are met, squash-merge with remote branch deletion; otherwise stop and ask the user.
+4. If Critical or High findings exist, enter the Bounded Revision Loop below instead of stopping immediately or re-reviewing without limit.
+5. If the review is clean and the `code-review` auto-merge criteria are met, squash-merge with remote branch deletion. If it is clean but a criterion is unmet (checks pending, branch protection, merge conflict), leave it for the user to merge, note that in the ledger, and move on — do not block the batch waiting on it.
 6. Rely on `Closes #<issue-number>` automation to close the issue and move it to done.
-7. Clean up the review worktree.
-8. Update the ledger with PR URL, review comment status, merge status, and cleanup status.
-9. Move to the next PR or issue.
+7. Clean up the review worktree (and any revision-round worktrees).
+8. Update the ledger with PR URL, the review round reached and loop-exit reason, review comment status, merge status, and cleanup status.
+9. Move to the next non-blocking PR or issue.
+
+### Bounded Revision Loop
+
+This is the guardrail against the `developer` and `architect` ping-ponging a PR indefinitely. The coordinator owns the loop and its round counter; neither agent re-triggers the cycle on its own.
+
+- **Cap.** At most two revision rounds per PR: review round 1, then at most rounds 2 and 3. Track the current round in the ledger.
+- **A round.** When a review returns Critical or High findings and the cap is not yet reached:
+  1. Dispatch the `developer` agent to fix only the specific findings raised, in the existing PR branch. Give it the review comment (or the enumerated findings), tell it to stay scoped to them with no unrelated changes, and to re-run the validation from `AGENTS.md` § Build & Validation.
+  2. Re-review from a fresh `architect` context, with the review worktree rebuilt against the PR's latest head, pointing it at the prior review comment on the PR and telling it this is a scoped re-review of revision round N.
+- **Scoped re-review (convergence).** A re-review is not a fresh full review; it follows the `code-review` skill's Re-review discipline — verify each prior finding as Resolved / Partially resolved / Not resolved, and raise new findings only for regressions the fix introduced or genuinely missed Critical/High issues, never fresh Medium/Low nitpicks. The convergence rule is `code-review`'s and applies to every re-review; the two-round cap here is burndown's own bound on top of it.
+- **Contested finding.** If the `developer` reports that it disagrees with a finding (believes it is wrong or out of scope) instead of fixing it, or the `architect` re-raises a finding the developer already reported as fixed, do not spend another round on it — it is a judgment dispute for the human.
+- **Park, don't halt.** When the loop exits without a clean PR — the cap is reached with Critical/High findings still open, or a finding is contested — park that PR as manual intervention in the ledger (record the round reached, the exit reason, and, for a dispute, both positions), then move on to the next non-blocking item. Do not stop the batch or wait on the user mid-run. A parked PR blocks anything that depends on it: park those dependents too and continue with independent work. The clean exit is the only one that proceeds to merge (step 5); everything parked is surfaced in the Phase 6 report.
 
 Before considering the batch done:
 
@@ -240,14 +253,42 @@ Before considering the batch done:
 - Make sure no temporary files, secrets, debug output, or local worktrees remain.
 - Update the ledger with final status and links.
 
-## Phase 5: Report
+## Phase 5: QA Sweep
+
+After the batch is integrated, exercise the behavior the batch actually changed and file any bugs that surface. This is a discovery pass, not a gate: the PRs are already merged, so QA never reverts them — confirmed bugs become new work. If no PRs merged this batch, there is nothing newly deployed to exercise; skip this phase and say so.
+
+Resolve the QA target and auth from `AGENTS.md` § Environments and § Agent Login. If the project has no running app to test (neither applies), skip this phase and note it in the report — do not invent a target.
+
+1. Confirm the merged work is live on the QA target.
+   - QA hits a running app, so it must test the environment where the merged changes are deployed — staging by default, never production unless the user explicitly asks.
+   - If merging the base branch triggers a deploy (per `AGENTS.md` § Branch Map / § CI Pipeline), wait for that deploy to finish before testing. If merges do not auto-deploy, the target may not yet include the just-merged changes: test what is actually deployed and flag the gap as a validation limit rather than assuming.
+
+2. Build the QA scope from the batch.
+   - Take the issues whose changes actually landed (merged this batch) from the ledger; parked or blocked issues are out of scope because their changes are not deployed.
+   - For each merged issue, derive concrete flows to exercise from its acceptance criteria / expected outcome and the behavior its PR changed.
+   - Add the integration points between batch issues — where two merged changes touch the same flow, data, or screen — since cross-change interactions are a common source of regressions no single PR review would catch.
+
+3. Run QA in a fresh agent.
+   - Spawn the `quality-assurance` agent (fresh context; not the implementer or reviewer of any issue in the batch). Give it the scoped flow list, the merged issue/PR references, and the target environment.
+   - It loads `agent-login`, drives the app through the Playwright MCP, reproduces before filing, and files only deterministically reproducible bugs. That workflow is owned by the `quality-assurance` agent; do not re-specify it here.
+
+4. File and link bugs.
+   - New bugs are filed as GitHub issues at the board's backlog status (per the `quality-assurance` workflow), using the repo issue template and Issue Type `Bug`.
+   - When a bug traces to a specific merged PR/issue, reference it so the trail is clear, and note it was found by this batch's QA sweep. Do not re-open or revert the merged PR — the fix is new work.
+   - These backlog bugs are what `backlog-refine` grooms next, closing the loop.
+
+5. Record QA results in the ledger: flows tested, bugs filed (with URLs), reproducible-but-unfiled observations, and any validation limits.
+
+## Phase 6: Report
 
 Summarize:
 
 - Completed issues.
 - Deferred or blocked issues.
 - PRs opened and merged.
+- PRs parked for manual intervention (revision cap reached, a contested finding, or a merge criterion unmet), what remains open on each, and any issues blocked because they depend on a parked PR.
 - Validation run.
+- QA sweep: flows exercised, bugs filed (with URLs) on the backlog, non-reproducible observations, and QA validation limits (including whether the merged changes were confirmed live on the QA target). Call out prominently any confirmed regression that traces to a merged PR, with a recommended fast-follow.
 - Remaining risks.
 - Recommended next batch.
 - Harness feedback: if a review finding recurred across PRs or exposed a missing guardrail, propose a concrete `AGENTS.md` rule or skill-checklist amendment so the next batch does not re-discover it. Treat configuration gaps, not just code bugs, as batch output.

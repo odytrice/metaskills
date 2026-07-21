@@ -133,6 +133,30 @@ path and reason.
    elapsed time, actor handles, or job URLs; use neutral wording when that metadata is
    unavailable.
 
+### Re-review (revision passes)
+
+When you review a PR that already carries a prior review from this skill (a comment
+with the `**Review complete**` header), you are re-reviewing a revision, not reviewing
+fresh. A re-review must converge: its job is to confirm whether the earlier findings
+were addressed, not to restart the review from zero.
+
+- Read the most recent prior review on the PR. Judge each finding it raised as
+  **Resolved**, **Partially resolved**, or **Not resolved**, pointing to the commit or
+  diff hunk that settles it.
+- Raise a *new* finding only when it is (a) a regression the fix introduced, or (b) a
+  Critical or High issue that genuinely threatens release and was not surfacable in the
+  earlier diff. Do not raise new Medium or Low findings that were equally reviewable in
+  an earlier pass — surfacing fresh nitpicks each pass is what stops a review from ever
+  converging.
+- Keep the `output-format.md` structure, but open the comment with a short **Prior
+  findings** recap (each earlier finding and its resolution status) so the trajectory is
+  visible; list only still-open findings and new regressions under Findings, and mark
+  the comment as a re-review in the header.
+- This is a convergence discipline, not a cap: keep re-reviewing until the change is
+  clean or genuinely blocked — never re-open settled ground or manufacture new
+  same-or-lower-severity work to keep the cycle alive. A batch flow such as `burndown`
+  may impose its own round bound on top of this.
+
 ### Automatic Squash Merge
 
 After posting the review comment, squash-merge the PR only when all of these are true:
@@ -191,8 +215,10 @@ deploy or commit flow. No worktree or separate agent is required; review in plac
 Any **Critical** or **High** finding blocks the commit. State the block explicitly in
 the Summary ("Commit blocked: <n> Critical/High finding(s)") and list what must be
 fixed. Do not proceed with (or recommend proceeding with) the commit until those
-findings are resolved and re-reviewed. Medium and Low findings do not block, but must
-be reported.
+findings are resolved and re-reviewed. When you re-review after those fixes, apply the
+same convergence discipline as a PR re-review (see Re-review): re-check the blocking
+findings and any regression the fix introduced, not the entire diff afresh. Medium and
+Low findings do not block, but must be reported.
 
 ---
 

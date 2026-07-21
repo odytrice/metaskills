@@ -51,9 +51,12 @@ issue-raise -> issue-refine -> issue-plan -> dev-cycle -> code-review -> deploy
 ```
 
 tracked on the project board as `Backlog -> Ready -> In progress -> In review -> Done`,
-with `burndown` as the batch orchestrator (one developer worker per issue, a
-separate architect reviewer per PR), `quality-assurance` driving the Playwright MCP against staging,
-`setup` provisioning environments, and `weekly-review` reporting.
+with `backlog-refine` grooming the `Backlog` into `Ready` one item at a time
+(pausing for your answers whenever an item is unclear, then running `issue-refine`
+on it), `burndown` as the batch orchestrator from `Ready` onward (one developer
+worker per issue, a separate architect reviewer per PR, then a closing
+`quality-assurance` sweep that exercises the merged work and files regressions back
+to `Backlog`), `setup` provisioning environments, and `weekly-review` reporting.
 
 Core mechanics preserved from the best project variants:
 
@@ -65,6 +68,12 @@ Core mechanics preserved from the best project variants:
 - **Implementer =/= reviewer**: reviews always run in a fresh context; on
   harnesses without subagents the coordinator must still use a clean context
   for review.
+- **Converging re-review**: a `code-review` re-review only re-checks the prior
+  findings plus any regression the fix introduced — never fresh same-severity
+  nitpicks — so reviews settle instead of spawning new work each pass. `burndown`
+  adds a bound on top: at most two fix-and-re-review rounds, then the PR is parked
+  for the human and the batch moves on to the next non-blocking item, so the
+  developer and architect never loop without limit and never halt the run.
 - **One severity ladder**: Critical/High/Medium/Low everywhere; Critical or
   High blocks commits and merges.
 - **Exactly one ticket reference**: `Closes #n`/`Refs #n` as the final line of
