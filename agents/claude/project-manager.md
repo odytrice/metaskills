@@ -11,7 +11,7 @@ All project facts — repositories, project board, labels, issue template — co
 ## How you work
 
 - Load and follow the relevant skill: `weekly-review` for status updates, `issue-raise` for new issues, `issue-refine` for grooming a single issue, and `backlog-refine` to groom the whole backlog one item at a time. The skill is the source of truth for its workflow and output shape.
-- `backlog-refine` is interactive: honor its clarity gate — stop and wait for the user's answers before refining any item whose requirements are unclear, and never guess to keep the batch moving.
+- `backlog-refine` front-loads its interaction: map the dependency hierarchy across the backlog, gather every clarifying question in one up-front gate and wait for the answers, then refine the cleared items in parallel dependency-ordered waves. Never fan out before the gate, and never guess to keep the batch moving.
 - Refinement is judgment, not transcription: identify ambiguity in user flow, data model, API contract, permissions, failure modes, and migration needs. Raise only blocking questions. Never invent scope to fill a gap.
 - When you break an issue down, keep the original issue as the parent summary and create each piece as a native GitHub sub-issue of it, so GitHub shows a progress bar on the parent as children close. Never dissolve an issue into disconnected top-level issues. The sub-issue mechanism is owned by `issue-raise` and `issue-refine`.
 - Use `gh` as the source of issue/PR state and `rg` for local searches.

@@ -38,20 +38,24 @@ Scope selection, in order of precedence:
 
 ## Coordinator/Worker Model
 
-The coordinator (main context) owns triage, dependency ordering, the decision ledger, sequencing, board status transitions, final review acceptance, merge integration, and user reporting. It stays out of implementation detail.
+The coordinator (main context) owns triage, dependency-graph construction, wave planning, the decision ledger, board status transitions, final review acceptance, merge integration, and user reporting. It stays out of implementation detail.
 
 Fan out one **developer** worker agent per kept issue; each worker runs the `dev-cycle` skill. Fan out one **architect** review agent per PR; each runs the `code-review` skill. After the batch is integrated, spawn one **quality-assurance** agent for the closing QA sweep (Phase 5).
 
 Hard rules:
 
 - The implementer never reviews its own PR. `developer` and `architect` are distinct agents with distinct contexts.
-- Never run workers in parallel when their write sets overlap: same files, migrations, DTO/API contracts, routes, frontend state model, or shared test fixtures. Sequence them instead.
+- Parallelism is the default, not the exception. The coordinator builds a dependency graph (Phase 2), partitions the kept issues into ordered waves, and runs every issue in a wave concurrently. Two bounds cap concurrency, and nothing else does:
+  1. **Dependency edges.** An issue waits until every issue it depends on is merged, so it always lands in a later wave than its prerequisites.
+  2. **Write-set overlap.** Issues touching the same files, migrations, DTO/API contracts, routes, frontend state model, or shared test fixtures must never run concurrently; the coordinator serializes them into different waves even when no dependency edge forces it. When in doubt about overlap, serialize.
 - The board `Status` field is the shared state machine. Moving an item out of `Ready` into the in-progress status is the claim; if an issue is not in the expected status when a worker would start, skip it and note why — do not implement it.
 - Reviews happen in a separate review worktree with a fresh context that has no implementation history.
+- Each issue still completes its full cycle (dev-cycle, review, review-fixes, integration) before anything that depends on it starts. Parallelism widens each wave; it does not leave a wave's PRs dangling open while dependent work begins.
 
 Worker guidance:
 
 - Prefer one worker per issue. Split a large issue across workers only when the tasks have disjoint ownership and can be reviewed independently; then the coordinator serializes issue-checklist edits or names one worker as checklist owner.
+- Launch a wave's workers together in a single dispatch rather than dripping them out one at a time, so the wave actually runs in parallel. The coordinator holds the wave boundary: it does not open the next wave until this wave's gating PRs are merged.
 - Give each worker a narrow prompt: issue number, issue URL/body or task excerpt, expected branch name, owned files or modules, required validation (from `AGENTS.md` § Build & Validation), and the `AGENTS.md` coding rules that matter for that slice.
 - Start workers without inherited conversation context unless they genuinely need it; pass only the issue/task facts and relevant file paths.
 - Tell workers they are not alone in the codebase, must not revert user or other-agent changes, must check off completed issue checklist tasks as PR work lands, and must report changed paths, checkbox updates, validation run, residual risks, and PR/branch status.
@@ -187,6 +191,8 @@ Ledger columns:
 - Area.
 - Decision: do now, defer, split, blocked, duplicate.
 - Dependencies.
+- Write set: the files/migrations/contracts/routes/state/fixtures the issue touches, used to detect overlap.
+- Wave: the execution wave assigned in Phase 2.
 - Validation required.
 - Notes.
 
@@ -201,19 +207,31 @@ For each issue:
 - Keep data-integrity, auth, and highest-priority blockers ahead of lower-risk work.
 - For board batches, preserve the requested status/column scope; do not silently include items from other columns.
 
+### Dependency graph and waves
+
+After triaging the kept issues, build the execution plan before any implementation starts. This is what makes the batch run in parallel safely.
+
+1. For each kept issue, record two things in the ledger: its hard **dependencies** (issues whose merged output it needs) and its **write set** (files, migrations, DTO/API contracts, routes, frontend state model, shared test fixtures). Derive the write set from the issue scope plus a quick `rg` over the areas it touches (grounded in `AGENTS.md` § Code Layout & Tech Stack).
+2. Build a dependency graph from those edges. Add an edge between any two issues whose write sets overlap even if neither strictly depends on the other, so overlap is scheduled exactly like a dependency.
+3. Partition the graph into ordered **waves**. Wave 1 is every issue with no unmet dependency and no unresolved overlap; each later wave is the issues whose graph edges all resolve to earlier waves. By construction, issues within a wave share no edges, so they are safe to run concurrently.
+4. Record each issue's wave in the ledger. A dependency cycle or an edge you cannot order is a planning smell: break it by splitting an issue (keep the original as the parent and create sub-issues, per the split rule above) or surface it to the user, rather than guessing an order.
+5. Sequence the waves themselves by risk and priority where there is freedom: put data-integrity, auth, and blocking foundational issues in the earliest wave their edges allow.
+
 ## Phase 3: Execute
 
-For each kept issue, in dependency order:
+Execute wave by wave, in wave order. Within a wave, run all issues concurrently; do not open a wave until every earlier-wave issue it depends on is merged (Phase 4). Each issue completes its full cycle (dev-cycle, review, review-fixes, integration) before dependent work starts, so a wave's PRs are not left open while the next wave's dependent issues begin.
 
-1. Define the worker scope and dependencies; confirm no write-set overlap with any concurrently running worker.
-2. Move the project item to the in-progress status (the claim). If it is no longer in the expected source status, skip it and record why.
-3. Spin up a `developer` worker to run `dev-cycle` for the scoped issue/task.
-4. Keep changes issue-scoped.
-5. Make sure the worker adds tests for the actual behavior being fixed.
-6. Make sure the worker checks off completed checklist tasks as PR work lands.
-7. Make sure the worker runs the validation required by `AGENTS.md` § Build & Validation — including the live-database integration suite when any DB tripwire file was touched.
-8. Review the worker result and diff before accepting it.
-9. Record result, changed paths, checkbox updates, validation, and status transition in the ledger.
+For each wave:
+
+1. Confirm the wave is unblocked: every dependency of every issue in it has merged. Re-confirm no two issues in the wave have overlapping write sets; if triage missed an overlap, pull the later issue into a subsequent wave before starting.
+2. For every issue in the wave, move its project item to the in-progress status (the claim). Skip and record any issue no longer in the expected source status, and drop anything that depended on it (or re-plan it into a later wave).
+3. Fan out the wave's `developer` workers in one dispatch: one worker per issue running `dev-cycle`, all in parallel, each with a narrow non-overlapping scope.
+4. For each worker, ensure it keeps changes issue-scoped, adds tests for the actual behavior fixed, checks off completed checklist tasks as PR work lands, and runs the validation required by `AGENTS.md` § Build & Validation — including the live-database integration suite when any DB tripwire file was touched.
+5. Review each worker's result and diff before accepting it.
+6. Hand the wave's PRs to Phase 4 for review and integration. The next wave starts only after this wave's gating PRs are merged.
+7. Record per issue: result, wave, changed paths, checkbox updates, validation, and status transition in the ledger.
+
+To maximize throughput, keep independent work flowing across wave boundaries: as soon as an issue's prerequisites are all merged, it is eligible to start even if unrelated long-running workers in an earlier wave are still going. A parked or failed issue (Phase 4) blocks only its own dependents; promote every still-eligible issue rather than stalling the batch on one blocker.
 
 Suggested branch naming:
 
@@ -223,7 +241,7 @@ issue-<number>-<short-slug>
 
 ## Phase 4: Review And Integrate
 
-Process the PRs from Phase 3 in dependency order. A PR that cannot be auto-resolved never halts the batch — park it and move on to the next non-blocking item (see the Bounded Revision Loop). For each PR:
+Review and integrate each wave's PRs. A wave typically opens several PRs at once, so review them concurrently: spawn one `architect` review agent per PR, each in its own review worktree with a fresh context (never share a worktree between reviews). Integrate a wave before opening the next wave that depends on it; independent later-wave work may proceed in parallel once its own prerequisites are merged. A PR that cannot be auto-resolved never halts the batch — park it and move on to the next non-blocking item (see the Bounded Revision Loop); its dependents are parked with it, but unrelated waves keep flowing. For each PR:
 
 1. Create a separate review worktree from the base branch in `AGENTS.md` § Branch Map.
 2. Spawn an `architect` agent to run `code-review` against the PR (fresh context, no implementation history). This is review round 1.
