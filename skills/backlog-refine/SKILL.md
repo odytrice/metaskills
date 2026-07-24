@@ -63,3 +63,4 @@ Run by the `project-manager` agent (or the main interactive session). Like `issu
 - Do not move an item to ready except through `issue-refine`'s approved transition, and do not mark an item done until you have confirmed it is in the ready status.
 - Do not create branches, commits, PRs, or implementation edits.
 - Do not close, relabel, or reassign items beyond what the user approves at the gate.
+- When an item needs to be split, do it through `issue-refine`'s sub-issue path: keep the original item as the parent summary and attach the pieces as native GitHub sub-issues so the parent shows a progress bar. Never dissolve a backlog item into disconnected top-level issues.

@@ -36,6 +36,7 @@ The plan is a single comment on the issue that holds the task checklist and refl
 - Do not create branches, commits, PRs, or implementation edits. Your only writes are the plan comment (via a temporary `.tmp-plan-<number>.md` body file) and the project status transition.
 - Tasks must be concrete enough for `dev-cycle` to implement and check off individually.
 - If the issue is too ambiguous to plan, stop and surface the blocking questions (in chat, or in the comment's `## Blockers` section) rather than inventing scope. Prefer routing genuinely under-specified issues back through `issue-refine` first.
+- Plan tasks live in the single ledger comment, not as separate issues. If decomposition reveals the issue is really several issues (too large to be one), do not spin the plan out into loose top-level issues: route it back through `issue-refine`, which keeps this issue as the parent and creates the pieces as native GitHub sub-issues so the parent shows a progress bar. Then plan each child issue individually.
 
 ## Claim The Issue (status as lock)
 

@@ -196,7 +196,7 @@ For each issue:
 
 - Confirm it still applies to current code.
 - Identify dependencies and sequencing; order dependent issues before their dependents.
-- Split oversized issues if they would produce an unsafe PR.
+- Split oversized issues if they would produce an unsafe PR. When you split, keep the original issue as the parent and create each piece as a native GitHub sub-issue of it (the same parent-plus-sub-issues shape `issue-refine`/`issue-raise` use), so the parent shows a progress bar; never dissolve it into disconnected top-level issues. Link a child with `$childId = gh api repos/<owner>/<repo>/issues/<child-number> --jq '.id'` then `gh api --method POST repos/<owner>/<repo>/issues/<parent-number>/sub_issues -F sub_issue_id=$childId`.
 - Move implementation-only details into tasks if the issue is vague.
 - Keep data-integrity, auth, and highest-priority blockers ahead of lower-risk work.
 - For board batches, preserve the requested status/column scope; do not silently include items from other columns.

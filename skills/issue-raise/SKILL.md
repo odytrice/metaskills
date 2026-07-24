@@ -1,6 +1,6 @@
 ---
 name: issue-raise
-description: Create GitHub issues for the current project repository. Use when the user asks to raise, file, open, create, or log a GitHub issue, ticket, bug, task, enhancement, cleanup, follow-up, or investigation; ask only necessary clarifying questions, use the repo issue template, select the GitHub Issue Type, add appropriate existing labels, and assign the issue to the requester/current GitHub user.
+description: Create GitHub issues for the current project repository. Use when the user asks to raise, file, open, create, or log a GitHub issue, ticket, bug, task, enhancement, cleanup, follow-up, or investigation; ask only necessary clarifying questions, use the repo issue template, select the GitHub Issue Type, add appropriate existing labels, and assign the issue to the requester/current GitHub user. When the issue is one piece of a larger issue's breakdown, keep the parent issue and create this issue as a native GitHub sub-issue of it so the parent shows a progress bar.
 ---
 
 # Raise Issue
@@ -18,6 +18,7 @@ Use this workflow to create a GitHub issue from a user request. All project fact
    - Ask for the missing behavior/problem if the request is too vague to summarize.
    - Ask for expected outcome or acceptance criteria if completion would otherwise be ambiguous.
    - Ask for Type or labels only when they cannot be inferred from the request and the live lists below.
+   - Determine whether this issue belongs under a parent issue. If the request is a piece of a larger issue's breakdown, or the user names a parent, capture the parent issue number so the new issue can be linked as a sub-issue in step 6.
    - Do not ask for optional details that can be reasonably inferred. Put non-blocking unknowns in `Notes`.
 
 3. Load available GitHub Issue Types and labels.
@@ -51,7 +52,24 @@ Use this workflow to create a GitHub issue from a user request. All project fact
    gh api graphql -f query='mutation($id: ID!, $issueTypeId: ID!) { updateIssue(input: {id: $id, issueTypeId: $issueTypeId}) { issue { number url issueType { name } } } }' -F id=ISSUE_ID -F issueTypeId=ISSUE_TYPE_ID
    ```
 
-6. Add the issue to the project board when the user asks or the project workflow clearly requires it.
+6. Link the issue under its parent when it is one piece of a larger issue's breakdown (parent captured in step 2).
+   - Keep the parent issue as the high-level summary and attach this issue as a native GitHub sub-issue of it, so GitHub shows a progress bar on the parent that advances as its children close. Do not replace the parent with its parts, and do not track the breakdown only as a text checklist.
+   - The sub-issues API links by the child's REST database `id` (an integer), not its issue number. Resolve `<owner>/<repo>` from `AGENTS.md` § Repositories:
+
+   ```powershell
+   $childId = gh api repos/OWNER/REPO/issues/CHILD_NUMBER --jq '.id'
+   gh api --method POST repos/OWNER/REPO/issues/PARENT_NUMBER/sub_issues -F sub_issue_id=$childId
+   ```
+
+   - Verify the link took, then report the parent and child numbers:
+
+   ```powershell
+   gh api repos/OWNER/REPO/issues/PARENT_NUMBER/sub_issues --jq '.[].number'
+   ```
+
+   - If the sub-issues API is unavailable (older `gh`, or the endpoint returns 404/410), report that the sub-issue link could not be completed and surface the parent and child numbers so the relationship can be added in the GitHub UI. Do not silently leave the child as an orphaned top-level issue without saying so.
+
+7. Add the issue to the project board when the user asks or the project workflow clearly requires it.
    - Resolve the board owner and project number from `AGENTS.md` § Project Board.
 
    ```powershell
@@ -60,14 +78,14 @@ Use this workflow to create a GitHub issue from a user request. All project fact
 
    - If this fails with a missing scope, ask the user to run `gh auth refresh --hostname github.com -s project`, then report the blocker and the issue URL.
 
-7. Verify and report.
+8. Verify and report.
 
    ```powershell
    gh issue view ISSUE_URL --json number,title,url,labels,assignees
    gh api graphql -f query='query($id: ID!) { node(id: $id) { ... on Issue { number url issueType { name } } } }' -F id=ISSUE_ID
    ```
 
-   The final response must include the issue URL, title, Issue Type (or a note that Types are not enabled), labels applied, assignee, and board status if changed.
+   The final response must include the issue URL, title, Issue Type (or a note that Types are not enabled), labels applied, assignee, parent issue link when the issue was created as a sub-issue, and board status if changed.
 
 ## Drafting Rules
 
@@ -77,3 +95,4 @@ Use this workflow to create a GitHub issue from a user request. All project fact
 - Avoid implementation promises unless the request or code context clearly supports them.
 - Do not leave the issue unassigned unless the authenticated user cannot be determined or the user requests no assignee.
 - Do not apply speculative labels. Missing optional labels are better than wrong labels.
+- When an issue is part of a larger issue's breakdown, keep the parent issue as the summary and link each new issue as a sub-issue of it (step 6); never dissolve the parent into a pile of loose top-level issues.

@@ -17,6 +17,7 @@ Use this skill to turn a vague or under-specified GitHub issue into implementati
 - Separate confirmed facts from assumptions and open questions.
 - Do not update the GitHub issue body, labels, assignees, or project status unless the user explicitly approves the proposed refinement.
 - Never post refinement comments. Discuss refinements in chat, then update the issue body only after approval.
+- When the analysis concludes an issue should be split, keep the original issue as the parent summary and create each piece as a native GitHub sub-issue of it (see "Splitting Into Sub-Issues"). Never dissolve the original into disconnected top-level issues or replace it wholesale; the parent must remain so GitHub shows a progress bar as children close.
 - If the project uses a GitHub Project board (per `AGENTS.md` § Project Board), move the issue's item to the ready-for-work Status option after the user approves the refinement (Workflow step 7). If there is no board, skip the transition.
 
 ## Workflow
@@ -39,7 +40,7 @@ Use this skill to turn a vague or under-specified GitHub issue into implementati
 3. Analyze readiness.
    - Identify what is already clear.
    - Identify ambiguity in user flow, data model, API contract, UI behavior, permissions, failure modes, migration needs, and validation.
-   - Decide whether the issue is implementation-ready, needs user answers, or should be split into multiple issues.
+   - Decide whether the issue is implementation-ready, needs user answers, or should be split into multiple issues (as sub-issues of the original; see "Splitting Into Sub-Issues").
 
 4. Discuss with the user.
    - Present a concise refinement summary: current understanding, proposed scope, explicit out-of-scope items, likely files or modules affected, proposed task checklist, acceptance criteria, risks and dependencies, and blocking questions.
@@ -78,6 +79,24 @@ Use this skill to turn a vague or under-specified GitHub issue into implementati
    - After the edit, re-run the item-list lookup and confirm the new status. Report the verified transition, not the intended one; if the edit was skipped or failed, say so explicitly.
    - If the issue is not on the board, do not add a duplicate item silently; note it and ask before changing the project.
    - If `gh project` reports a missing scope, ask the user to run `gh auth refresh --hostname github.com -s project`.
+
+## Splitting Into Sub-Issues
+
+When refinement concludes the issue is too large and should become several issues, do not fan it out into disconnected top-level issues and do not overwrite the original with its parts. Instead:
+
+- Keep the **original issue as the parent**: simplify its body to a high-level summary (goal, context, and links to the children) and let its acceptance criteria reduce to "all sub-issues resolved". Its task list becomes the set of child issues rather than low-level steps.
+- Create each piece as its own issue and link it as a native GitHub **sub-issue** of the parent, so GitHub renders a progress bar on the parent that advances as children close.
+- Split only after the user approves the proposed breakdown, the same approval gate as a body rewrite. Propose the child issues (a title plus one-line scope each) in chat first.
+
+Delegate child creation and the parent link to `issue-raise` (it owns issue creation and sub-issue linkage), passing each child's scope and the parent issue number. The linkage uses the child's REST database `id`, not its number; resolve `<owner>/<repo>` from `AGENTS.md` § Repositories:
+
+```powershell
+$childId = gh api repos/OWNER/REPO/issues/CHILD_NUMBER --jq '.id'
+gh api --method POST repos/OWNER/REPO/issues/PARENT_NUMBER/sub_issues -F sub_issue_id=$childId
+gh api repos/OWNER/REPO/issues/PARENT_NUMBER/sub_issues --jq '.[].number'
+```
+
+Report the parent link and every child issue created. If the sub-issues API is unavailable, surface the parent and child numbers so the links can be added in the GitHub UI rather than leaving the children orphaned silently.
 
 ## Output Shape
 

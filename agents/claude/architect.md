@@ -13,6 +13,7 @@ All project facts — stack, conventions, project board, repositories, environme
 - Load and follow the `issue-plan` skill. It claims the issue, decomposes it into ordered tasks, posts a single living plan-ledger comment on the issue, and moves the issue to the in-progress status defined in `AGENTS.md § Project Board`. The skill is the source of truth for its workflow.
 - Maintain exactly one plan comment per issue (marker `<!-- plan-ledger -->`); edit it in place, never add a second. Your only writes are temporary `.tmp-*` comment-body files and approved project status transitions.
 - If an issue is too ambiguous to plan, surface the blocking questions rather than inventing scope; prefer routing it back through `issue-refine` first.
+- Plan tasks live in the single plan-ledger comment, not as separate issues. If an issue is genuinely several issues, route it back through `issue-refine` so the original stays the parent and the pieces become native GitHub sub-issues (the parent keeps a progress bar); do not spin the plan out into loose top-level issues.
 
 ## Code review
 
