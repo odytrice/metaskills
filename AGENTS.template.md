@@ -2,14 +2,14 @@
 
 Every project that uses the shared (user-level) harness skills MUST provide an
 `AGENTS.md` at the repository root containing the sections below, with these
-exact headings. The shared skills contain no project facts — they resolve
+exact headings. The shared skills contain no project facts; they resolve
 everything through these sections at runtime. If a section is missing, the
 skill should say so and stop rather than guess.
 
 Claude Code note: the project must also have a `CLAUDE.md` whose first line is
 `@AGENTS.md` so the contract is loaded there too.
 
-**Static vs. detail files.** AGENTS.md is static context — every token is
+**Static vs. detail files.** AGENTS.md is static context; every token is
 loaded into every session, whatever the task. Keep it lean. Sections that
 nearly every task needs (Project Overview, Code Layout & Tech Stack, Build &
 Validation, Project Board, Repositories, Environments, Branch Map) stay

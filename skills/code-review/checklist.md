@@ -2,7 +2,7 @@
 
 Apply only the sections relevant to the changed areas. On any conflict, the project's
 `AGENTS.md` § Code Layout & Tech Stack and § Review Notes override this checklist.
-Always also apply `AGENTS.md` § Review Notes — it carries the project-specific checks,
+Always also apply `AGENTS.md` § Review Notes; it carries the project-specific checks,
 known-bug interactions, and active migrations this generic checklist cannot know about.
 
 ## Backend (F# / .NET)

@@ -11,11 +11,11 @@ Use this skill for one focused GitHub issue, bug, feature, or cleanup task that 
 
 This skill contains no project facts. Resolve them at runtime from the repository's `AGENTS.md` (per the harness contract):
 
-- **§ Branch Map** — the base branch for worktrees and PRs. This is the single source of truth; never assume `main` or any other default.
-- **§ Build & Validation** — the exact build/test/lint/format commands per layer, and the **DB tripwire files** list.
-- **§ Project Board** — board owner/org, project number, and `Status` option names in lifecycle order.
-- **§ Repositories** — the app repo slug and issue template path.
-- **§ Code Layout & Tech Stack** — where the code lives and the architectural conventions to follow.
+- **§ Branch Map**: the base branch for worktrees and PRs. This is the single source of truth; never assume `main` or any other default.
+- **§ Build & Validation**: the exact build/test/lint/format commands per layer, and the **DB tripwire files** list.
+- **§ Project Board**: board owner/org, project number, and `Status` option names in lifecycle order.
+- **§ Repositories**: the app repo slug and issue template path.
+- **§ Code Layout & Tech Stack**: where the code lives and the architectural conventions to follow.
 
 If a section this skill needs is missing from `AGENTS.md`, say so and stop. Do not guess.
 
@@ -33,7 +33,7 @@ If a section this skill needs is missing from `AGENTS.md`, say so and stop. Do n
 - Use `rg` first for searches.
 - Do not overwrite user changes.
 - Keep edits scoped.
-- Reserve agent autonomy for well-specified work. The dangerous part of a change is the last 20% — ambiguous requirements, edge cases, integration points, and architectural trade-offs. If requirements are ambiguous, a business-logic assumption is required, or a structural trade-off surfaces mid-implementation, stop and surface it rather than inventing scope. Code that looks right and passes basic tests but encodes a wrong assumption is worse than an honest blocker.
+- Reserve agent autonomy for well-specified work. The dangerous part of a change is the last 20%: ambiguous requirements, edge cases, integration points, and architectural trade-offs. If requirements are ambiguous, a business-logic assumption is required, or a structural trade-off surfaces mid-implementation, stop and surface it rather than inventing scope. Code that looks right and passes basic tests but encodes a wrong assumption is worse than an honest blocker.
 - Use file edit/write tools for manual edits, never shell here-strings.
 - Follow the project's host-side vs. service-internal config conventions in `AGENTS.md` (e.g. no `localhost` where a loopback IP or service name is required).
 - Never use destructive git commands unless explicitly requested.
@@ -46,8 +46,8 @@ If a section this skill needs is missing from `AGENTS.md`, say so and stop. Do n
 
 Do not silently assume the `issue-plan` skill ran. Check the issue's comments for a plan-ledger comment (first body line is `<!-- plan-ledger -->`):
 
-- **Ledger exists**: its checklist is the task list to execute. The issue was already claimed and moved to `In progress` by `issue-plan` — do not repeat that transition. Track progress in that one comment: check tasks off as they are implemented, tested, and included in the branch; surface execution blockers in its `## Blockers` section. Re-fetch the comment immediately before editing so concurrent updates are not lost; edit it in place, never add a second plan comment.
-- **No ledger**: for a well-specified small task, proceed — this skill then owns the `In progress` transition itself (move the board item to `In progress` before implementation edits begin, using the status-as-lock discipline: only claim from `Ready`, re-read to confirm the transition took). For anything under-specified, stop and run `issue-plan` (or `issue-refine`) first rather than opening a worktree to produce plausible-looking code on an ambiguous task.
+- **Ledger exists**: its checklist is the task list to execute. The issue was already claimed and moved to `In progress` by `issue-plan`; do not repeat that transition. Track progress in that one comment: check tasks off as they are implemented, tested, and included in the branch; surface execution blockers in its `## Blockers` section. Re-fetch the comment immediately before editing so concurrent updates are not lost; edit it in place, never add a second plan comment.
+- **No ledger**: for a well-specified small task, proceed; this skill then owns the `In progress` transition itself (move the board item to `In progress` before implementation edits begin, using the status-as-lock discipline: only claim from `Ready`, re-read to confirm the transition took). For anything under-specified, stop and run `issue-plan` (or `issue-refine`) first rather than opening a worktree to produce plausible-looking code on an ambiguous task.
 
 ## Worktree And PR Workflow
 
@@ -116,16 +116,16 @@ If the issue is not in the project, do not create a duplicate item silently; not
 ## Flow
 
 1. Understand the task.
-   - Read the GitHub issue with `gh issue view <number> --json ...,comments` when applicable, including the plan-ledger comment if one exists — its checklist is the task list to execute.
+   - Read the GitHub issue with `gh issue view <number> --json ...,comments` when applicable, including the plan-ledger comment if one exists; its checklist is the task list to execute.
    - Read linked docs, plans, and PRs.
    - Check `git status --short` before editing.
    - If the current checkout is dirty, do not use it for implementation; preserve it and create the worktree from the selected base.
    - Assess specification quality before writing code (see the last-20% Core Rule and Plan Ledger Coordination).
 
 2. Confirm ownership before implementing (if a project board is in use).
-   - `In progress` with a plan ledger: claimed and planned — proceed, do not re-transition.
+   - `In progress` with a plan ledger: claimed and planned; proceed, do not re-transition.
    - `Ready` (or `In progress` with no ledger but assigned to you / handed to you directly): claim it yourself per Plan Ledger Coordination.
-   - `In review` or `Done`, or a plan ledger showing another worker's ownership: owned or finished — stop and report; do not steal it.
+   - `In review` or `Done`, or a plan ledger showing another worker's ownership: owned or finished; stop and report; do not steal it.
    - With no project board, treat the presence of a plan ledger (or an explicit user request) as the go-ahead and track state in the ledger only.
 
 3. Create the implementation worktree.

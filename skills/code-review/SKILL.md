@@ -10,12 +10,12 @@ Use this skill when asked to review a PR, branch, diff, GitHub issue implementat
 This skill is project-agnostic. All project facts come from the repository's `AGENTS.md`
 (see the harness contract). Before starting, confirm `AGENTS.md` provides:
 
-- **§ Branch Map** — base branches for PRs and review worktrees.
-- **§ Build & Validation** — validation commands and the DB tripwire file list.
-- **§ Code Layout & Tech Stack** — where code lives and the conventions to enforce.
-- **§ Review Notes** — project-specific checks layered on top of `checklist.md`.
+- **§ Branch Map**: base branches for PRs and review worktrees.
+- **§ Build & Validation**: validation commands and the DB tripwire file list.
+- **§ Code Layout & Tech Stack**: where code lives and the conventions to enforce.
+- **§ Review Notes**: project-specific checks layered on top of `checklist.md`.
 
-If a required section is missing, say which one and stop — do not guess.
+If a required section is missing, say which one and stop; do not guess.
 
 ## Modes
 
@@ -146,14 +146,14 @@ were addressed, not to restart the review from zero.
 - Raise a *new* finding only when it is (a) a regression the fix introduced, or (b) a
   Critical or High issue that genuinely threatens release and was not surfacable in the
   earlier diff. Do not raise new Medium or Low findings that were equally reviewable in
-  an earlier pass — surfacing fresh nitpicks each pass is what stops a review from ever
+  an earlier pass; surfacing fresh nitpicks each pass is what stops a review from ever
   converging.
 - Keep the `output-format.md` structure, but open the comment with a short **Prior
   findings** recap (each earlier finding and its resolution status) so the trajectory is
   visible; list only still-open findings and new regressions under Findings, and mark
   the comment as a re-review in the header.
 - This is a convergence discipline, not a cap: keep re-reviewing until the change is
-  clean or genuinely blocked — never re-open settled ground or manufacture new
+  clean or genuinely blocked; never re-open settled ground or manufacture new
   same-or-lower-severity work to keep the cycle alive. A batch flow such as `burndown`
   may impose its own round bound on top of this.
 
@@ -210,7 +210,7 @@ git branch -D <headRefName>
 
 ## Local Mode
 
-Local mode reviews the current working tree — typically as the pre-commit gate in a
+Local mode reviews the current working tree, typically as the pre-commit gate in a
 deploy or commit flow. No worktree or separate agent is required; review in place.
 
 ### Process
@@ -246,5 +246,5 @@ Low findings do not block, but must be reported.
 In either mode, when a finding recurs across reviews or reveals a missing durable
 guardrail, propose a concrete `AGENTS.md` rule (usually under § Review Notes) or a
 `checklist.md` line that would have caught it. Include this in the Harness Feedback
-section of the output only when there is something durable to add — the goal is a
+section of the output only when there is something durable to add; the goal is a
 compounding rule set, not noise.

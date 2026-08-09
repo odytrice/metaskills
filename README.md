@@ -1,12 +1,12 @@
 # metaskills
 
-A single, canonical agent harness — skills, commands, and agent roles — shared
+A single, canonical agent harness (skills, commands, and agent roles) shared
 across three coding-agent harnesses with as much parity as each allows:
 
 | | Claude Code (`~/.claude`) | opencode (`~/.config/opencode`) | Codex (`~/.codex`) |
 |---|---|---|---|
 | **Skills** | `skills/<name>/` | `skill/<name>/` | `skills/<name>/` |
-| **Commands** | — (skills double as `/<name>` slash commands) | `command/*.md` | `prompts/*.md` |
+| **Commands** | not used (skills double as `/<name>` slash commands) | `command/*.md` | `prompts/*.md` |
 | **Agents** | `agents/*.md` (Claude dialect) | `agent/*.md` (opencode dialect) | `agents/*.toml` (Codex dialect) |
 
 Skills are written once and installed verbatim into all three harnesses.
@@ -15,8 +15,8 @@ definitions exist in three dialects with near-identical bodies.
 
 ## Design
 
-**Skills are project-agnostic.** Every project fact — board numbers, URLs,
-branch maps, image names, build commands, login flows — is resolved at runtime
+**Skills are project-agnostic.** Every project fact (board numbers, URLs,
+branch maps, image names, build commands, login flows) is resolved at runtime
 from the project's `AGENTS.md`, which must satisfy the contract in
 [`AGENTS.template.md`](AGENTS.template.md). If a required section is missing,
 skills say so and stop rather than guess.
@@ -69,8 +69,8 @@ Core mechanics preserved from the best project variants:
   harnesses without subagents the coordinator must still use a clean context
   for review.
 - **Converging re-review**: a `code-review` re-review only re-checks the prior
-  findings plus any regression the fix introduced — never fresh same-severity
-  nitpicks — so reviews settle instead of spawning new work each pass. `burndown`
+  findings plus any regression the fix introduced, never fresh same-severity
+  nitpicks, so reviews settle instead of spawning new work each pass. `burndown`
   adds a bound on top: at most two fix-and-re-review rounds, then the PR is parked
   for the human and the batch moves on to the next non-blocking item, so the
   developer and architect never loop without limit and never halt the run.
@@ -79,7 +79,7 @@ Core mechanics preserved from the best project variants:
 - **Exactly one ticket reference**: `Closes #n`/`Refs #n` as the final line of
   a PR body.
 - **Harness feedback**: recurring review findings become proposed amendments
-  to AGENTS.md or the skills — the harness is designed to compound.
+  to AGENTS.md or the skills; the harness is designed to compound.
 
 ## Install
 
@@ -104,5 +104,5 @@ commands in the target directories are left alone.
 3. Delete the project's local copies of these skills/commands/agents so the
    user-level versions apply (keep a project-level skill only where behavior
    genuinely diverges, e.g. a rich `agent-login`).
-4. Models are deliberately not pinned in agent frontmatter — control model
+4. Models are deliberately not pinned in agent frontmatter; control model
    choice per harness instead.

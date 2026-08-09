@@ -5,7 +5,7 @@ description: Create GitHub issues for the current project repository. Use when t
 
 # Raise Issue
 
-Use this workflow to create a GitHub issue from a user request. All project facts come from the repository's `AGENTS.md` (see the harness contract): the repo slug and issue template path from § Repositories, and the board owner/project number from § Project Board. If a required AGENTS.md section is missing, say which section is missing and stop — do not guess project facts.
+Use this workflow to create a GitHub issue from a user request. All project facts come from the repository's `AGENTS.md` (see the harness contract): the repo slug and issue template path from § Repositories, and the board owner/project number from § Project Board. If a required AGENTS.md section is missing, say which section is missing and stop; do not guess project facts.
 
 ## Workflow
 
@@ -28,7 +28,7 @@ Use this workflow to create a GitHub issue from a user request. All project fact
    gh label list --repo OWNER/REPO --limit 200
    ```
 
-   When the repository has Issue Types enabled, select exactly one enabled Type before creating the issue (commonly `Task`, `Bug`, or `Feature` — the live response is the source of truth). If Types are not enabled, skip the Type step and note that in the final report. Do not substitute labels for Type. Use existing labels only; prefer the smallest useful set (area/priority labels only when clearly supported by the request). Do not create new labels unless the user explicitly asks.
+   When the repository has Issue Types enabled, select exactly one enabled Type before creating the issue (commonly `Task`, `Bug`, or `Feature`; the live response is the source of truth). If Types are not enabled, skip the Type step and note that in the final report. Do not substitute labels for Type. Use existing labels only; prefer the smallest useful set (area/priority labels only when clearly supported by the request). Do not create new labels unless the user explicitly asks.
 
 4. Draft the issue body using the issue template headings when a template exists, otherwise:
    - `## Summary`: concise problem or requested change.
@@ -37,7 +37,7 @@ Use this workflow to create a GitHub issue from a user request. All project fact
    - `## Tasks`: actionable checklist items.
    - `## Notes`: assumptions, unknowns, screenshots/log placeholders, or implementation hints.
 
-   If the project's `AGENTS.md` states that execution checklists live elsewhere (e.g. a plan-ledger comment convention), omit `## Tasks` from the body — the issue body is the durable spec, and `## Expected outcome` defines "done".
+   If the project's `AGENTS.md` states that execution checklists live elsewhere (e.g. a plan-ledger comment convention), omit `## Tasks` from the body; the issue body is the durable spec, and `## Expected outcome` defines "done".
 
 5. Create the issue, then set the Issue Type when applicable.
    - Stage multi-line bodies in a temporary `.tmp-*` markdown file (e.g. `.tmp-issue-body.md`) and pass it via `--body-file`; delete the file afterwards.

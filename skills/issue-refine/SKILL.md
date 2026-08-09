@@ -5,7 +5,7 @@ description: Refine GitHub issues before implementation. Use when the user asks 
 
 # Refine Issue
 
-Use this skill to turn a vague or under-specified GitHub issue into implementation-ready scope. This is a discussion and analysis workflow, not an implementation workflow. All project facts come from the repository's `AGENTS.md` (harness contract): code areas from § Code Layout & Tech Stack, the issue template path from § Repositories, and the board owner, project number, and Status option names from § Project Board. If a required AGENTS.md section is missing, say which section is missing and stop — do not guess project facts.
+Use this skill to turn a vague or under-specified GitHub issue into implementation-ready scope. This is a discussion and analysis workflow, not an implementation workflow. All project facts come from the repository's `AGENTS.md` (harness contract): code areas from § Code Layout & Tech Stack, the issue template path from § Repositories, and the board owner, project number, and Status option names from § Project Board. If a required AGENTS.md section is missing, say which section is missing and stop; do not guess project facts.
 
 ## Core Rules
 
@@ -67,7 +67,7 @@ Use this skill to turn a vague or under-specified GitHub issue into implementati
 
 7. Move the project item to the ready-for-work status once refinement is complete (only if a board is in use).
    - Resolve the board owner, project number, and the exact Status option name for "ready" from `AGENTS.md` § Project Board.
-   - Look up the project id, the `Status` field and option ids, and the item id live — never hardcode IDs — then edit and verify the transition:
+   - Look up the project id, the `Status` field and option ids, and the item id live; never hardcode IDs; then edit and verify the transition:
 
    ```powershell
    gh project view <project-number> --owner <owner> --format json --jq '.id'
