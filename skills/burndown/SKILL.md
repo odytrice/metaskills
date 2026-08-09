@@ -48,7 +48,7 @@ Hard rules:
 - Parallelism is the default, not the exception. The coordinator builds a dependency graph (Phase 2), partitions the kept issues into ordered waves, and runs every issue in a wave concurrently. Two bounds cap concurrency, and nothing else does:
   1. **Dependency edges.** An issue waits until every issue it depends on is merged, so it always lands in a later wave than its prerequisites.
   2. **Write-set overlap.** Issues touching the same files, migrations, DTO/API contracts, routes, frontend state model, or shared test fixtures must never run concurrently; the coordinator serializes them into different waves even when no dependency edge forces it. When in doubt about overlap, serialize.
-- The board `Status` field is the shared state machine. Moving an item out of `Ready` into the in-progress status is the claim; if an issue is not in the expected status when a worker would start, skip it and note why — do not implement it.
+- The board `Status` field is the shared state machine. Moving an item out of `Ready` into the in-progress status is the claim; if an issue is not in the expected status when a worker would start, skip it and note why; do not implement it.
 - Reviews happen in a separate review worktree with a fresh context that has no implementation history.
 - Each issue still completes its full cycle (dev-cycle, review, review-fixes, integration) before anything that depends on it starts. Parallelism widens each wave; it does not leave a wave's PRs dangling open while dependent work begins.
 
@@ -73,15 +73,15 @@ You are not alone in the codebase; do not revert user or other-agent changes.
 
 ### Harnesses without subagents
 
-If the harness cannot spawn subagents, the coordinator may run `dev-cycle` sequentially itself for each issue — **except review**. Review must always run in a fresh context with no implementation history (a new session or a spawned agent), in its own review worktree. Never review from the context that produced the implementation.
+If the harness cannot spawn subagents, the coordinator may run `dev-cycle` sequentially itself for each issue; **except review**. Review must always run in a fresh context with no implementation history (a new session or a spawned agent), in its own review worktree. Never review from the context that produced the implementation.
 
 ## Review-Agent Model
 
 After each worker opens a PR, review it before moving to the next issue:
 
-- Spawn the `architect` agent (review-only; it must not edit product code) to run `code-review` against the PR from a separate review worktree — never the implementation worktree.
+- Spawn the `architect` agent (review-only; it must not edit product code) to run `code-review` against the PR from a separate review worktree; never the implementation worktree.
 - Post the review output as a PR comment.
-- If the review has any Critical or High finding, do not stop outright and do not loop without limit: run the bounded revision loop (Phase 4). Dispatch the `developer` agent to fix the specific findings, then re-review from a fresh `architect` context scoped to those findings. Allow at most two such rounds; if the PR is still not clean after the second re-review, or a finding is contested between the two agents, park that PR as manual intervention in the ledger and move on to the next non-blocking issue or PR — do not halt the batch to wait on it.
+- If the review has any Critical or High finding, do not stop outright and do not loop without limit: run the bounded revision loop (Phase 4). Dispatch the `developer` agent to fix the specific findings, then re-review from a fresh `architect` context scoped to those findings. Allow at most two such rounds; if the PR is still not clean after the second re-review, or a finding is contested between the two agents, park that PR as manual intervention in the ledger and move on to the next non-blocking issue or PR; do not halt the batch to wait on it.
 - If the review is clean and the `code-review` skill's auto-merge criteria are met (required checks passed, PR mergeable, no Critical/High findings), the coordinator squash-merges, deletes the remote branch, and deletes the local PR head branch. If any auto-merge criterion is unmet, do not force it: leave the PR for the user to merge, note it in the ledger, and move on to the next non-blocking item rather than halting the batch.
 - The coordinator merges; the review agent reports findings and comment status but does not merge.
 
@@ -130,7 +130,7 @@ Workers keep the issue's task checklist current as PR tasks complete:
 - Preserve all other text exactly; do not rewrite titles, notes, scope, or acceptance criteria.
 - Report every checkbox changed in the worker result and the ledger.
 
-If the project keeps tasks in a dedicated plan-ledger comment (per its `AGENTS.md` conventions), edit that single comment in place instead of the issue body — never add a second one. Otherwise edit the issue body checklist with a body file:
+If the project keeps tasks in a dedicated plan-ledger comment (per its `AGENTS.md` conventions), edit that single comment in place instead of the issue body; never add a second one. Otherwise edit the issue body checklist with a body file:
 
 ```powershell
 gh issue view <number> --json body --jq '.body' | Set-Content -NoNewline .tmp-issue-<number>-body.md
@@ -235,7 +235,7 @@ For each wave:
 1. Confirm the wave is unblocked: every dependency of every issue in it has merged. Re-confirm no two issues in the wave have overlapping write sets; if triage missed an overlap, pull the later issue into a subsequent wave before starting.
 2. For every issue in the wave, move its project item to the in-progress status (the claim). Skip and record any issue no longer in the expected source status, and drop anything that depended on it (or re-plan it into a later wave).
 3. Fan out the wave's `developer` workers in one dispatch: one worker per issue running `dev-cycle`, all in parallel, each with a narrow non-overlapping scope.
-4. For each worker, ensure it keeps changes issue-scoped, adds tests for the actual behavior fixed, checks off completed checklist tasks as PR work lands, and runs the validation required by `AGENTS.md` § Build & Validation — including the live-database integration suite when any DB tripwire file was touched.
+4. For each worker, ensure it keeps changes issue-scoped, adds tests for the actual behavior fixed, checks off completed checklist tasks as PR work lands, and runs the validation required by `AGENTS.md` § Build & Validation; including the live-database integration suite when any DB tripwire file was touched.
 5. Review each worker's result and diff before accepting it.
 6. Hand the wave's PRs to Phase 4 for review and integration. The next wave starts only after this wave's gating PRs are merged.
 7. Record per issue: result, wave, changed paths, checkbox updates, validation, and status transition in the ledger.
@@ -250,13 +250,13 @@ issue-<number>-<short-slug>
 
 ## Phase 4: Review And Integrate
 
-Review and integrate each wave's PRs. A wave typically opens several PRs at once, so review them concurrently: spawn one `architect` review agent per PR, each in its own review worktree with a fresh context (never share a worktree between reviews). Integrate a wave before opening the next wave that depends on it; independent later-wave work may proceed in parallel once its own prerequisites are merged. A PR that cannot be auto-resolved never halts the batch — park it and move on to the next non-blocking item (see the Bounded Revision Loop); its dependents are parked with it, but unrelated waves keep flowing. For each PR:
+Review and integrate each wave's PRs. A wave typically opens several PRs at once, so review them concurrently: spawn one `architect` review agent per PR, each in its own review worktree with a fresh context (never share a worktree between reviews). Integrate a wave before opening the next wave that depends on it; independent later-wave work may proceed in parallel once its own prerequisites are merged. A PR that cannot be auto-resolved never halts the batch; park it and move on to the next non-blocking item (see the Bounded Revision Loop); its dependents are parked with it, but unrelated waves keep flowing. For each PR:
 
 1. Create a separate review worktree from the base branch in `AGENTS.md` § Branch Map.
 2. Spawn an `architect` agent to run `code-review` against the PR (fresh context, no implementation history). This is review round 1.
 3. Post the review as a PR comment.
 4. If Critical or High findings exist, enter the Bounded Revision Loop below instead of stopping immediately or re-reviewing without limit.
-5. If the review is clean and the `code-review` auto-merge criteria are met, squash-merge with remote branch deletion. If it is clean but a criterion is unmet (checks pending, branch protection, merge conflict), leave it for the user to merge, note that in the ledger, and move on — do not block the batch waiting on it.
+5. If the review is clean and the `code-review` auto-merge criteria are met, squash-merge with remote branch deletion. If it is clean but a criterion is unmet (checks pending, branch protection, merge conflict), leave it for the user to merge, note that in the ledger, and move on; do not block the batch waiting on it.
 6. Rely on `Closes #<issue-number>` automation to close the issue and move it to done.
 7. Clean up the review worktree (and any revision-round worktrees), and delete the merged PR's local head branch so no dangling branch remains (see Review-Agent Model).
 8. Update the ledger with PR URL, the review round reached and loop-exit reason, review comment status, merge status, and cleanup status.
@@ -270,9 +270,9 @@ This is the guardrail against the `developer` and `architect` ping-ponging a PR 
 - **A round.** When a review returns Critical or High findings and the cap is not yet reached:
   1. Dispatch the `developer` agent to fix only the specific findings raised, in the existing PR branch. Give it the review comment (or the enumerated findings), tell it to stay scoped to them with no unrelated changes, and to re-run the validation from `AGENTS.md` § Build & Validation.
   2. Re-review from a fresh `architect` context, with the review worktree rebuilt against the PR's latest head, pointing it at the prior review comment on the PR and telling it this is a scoped re-review of revision round N.
-- **Scoped re-review (convergence).** A re-review is not a fresh full review; it follows the `code-review` skill's Re-review discipline — verify each prior finding as Resolved / Partially resolved / Not resolved, and raise new findings only for regressions the fix introduced or genuinely missed Critical/High issues, never fresh Medium/Low nitpicks. The convergence rule is `code-review`'s and applies to every re-review; the two-round cap here is burndown's own bound on top of it.
-- **Contested finding.** If the `developer` reports that it disagrees with a finding (believes it is wrong or out of scope) instead of fixing it, or the `architect` re-raises a finding the developer already reported as fixed, do not spend another round on it — it is a judgment dispute for the human.
-- **Park, don't halt.** When the loop exits without a clean PR — the cap is reached with Critical/High findings still open, or a finding is contested — park that PR as manual intervention in the ledger (record the round reached, the exit reason, and, for a dispute, both positions), then move on to the next non-blocking item. Do not stop the batch or wait on the user mid-run. A parked PR blocks anything that depends on it: park those dependents too and continue with independent work. The clean exit is the only one that proceeds to merge (step 5); everything parked is surfaced in the Phase 6 report.
+- **Scoped re-review (convergence).** A re-review is not a fresh full review; it follows the `code-review` skill's Re-review discipline; verify each prior finding as Resolved / Partially resolved / Not resolved, and raise new findings only for regressions the fix introduced or genuinely missed Critical/High issues, never fresh Medium/Low nitpicks. The convergence rule is `code-review`'s and applies to every re-review; the two-round cap here is burndown's own bound on top of it.
+- **Contested finding.** If the `developer` reports that it disagrees with a finding (believes it is wrong or out of scope) instead of fixing it, or the `architect` re-raises a finding the developer already reported as fixed, do not spend another round on it; it is a judgment dispute for the human.
+- **Park, don't halt.** When the loop exits without a clean PR, the cap is reached with Critical/High findings still open, or a finding is contested, park that PR as manual intervention in the ledger (record the round reached, the exit reason, and, for a dispute, both positions), then move on to the next non-blocking item. Do not stop the batch or wait on the user mid-run. A parked PR blocks anything that depends on it: park those dependents too and continue with independent work. The clean exit is the only one that proceeds to merge (step 5); everything parked is surfaced in the Phase 6 report.
 
 Before considering the batch done:
 
@@ -282,18 +282,18 @@ Before considering the batch done:
 
 ## Phase 5: QA Sweep
 
-After the batch is integrated, exercise the behavior the batch actually changed and file any bugs that surface. This is a discovery pass, not a gate: the PRs are already merged, so QA never reverts them — confirmed bugs become new work. If no PRs merged this batch, there is nothing newly deployed to exercise; skip this phase and say so.
+After the batch is integrated, exercise the behavior the batch actually changed and file any bugs that surface. This is a discovery pass, not a gate: the PRs are already merged, so QA never reverts them; confirmed bugs become new work. If no PRs merged this batch, there is nothing newly deployed to exercise; skip this phase and say so.
 
-Resolve the QA target and auth from `AGENTS.md` § Environments and § Agent Login. If the project has no running app to test (neither applies), skip this phase and note it in the report — do not invent a target.
+Resolve the QA target and auth from `AGENTS.md` § Environments and § Agent Login. If the project has no running app to test (neither applies), skip this phase and note it in the report; do not invent a target.
 
 1. Confirm the merged work is live on the QA target.
-   - QA hits a running app, so it must test the environment where the merged changes are deployed — staging by default, never production unless the user explicitly asks.
+   - QA hits a running app, so it must test the environment where the merged changes are deployed; staging by default, never production unless the user explicitly asks.
    - If merging the base branch triggers a deploy (per `AGENTS.md` § Branch Map / § CI Pipeline), wait for that deploy to finish before testing. If merges do not auto-deploy, the target may not yet include the just-merged changes: test what is actually deployed and flag the gap as a validation limit rather than assuming.
 
 2. Build the QA scope from the batch.
    - Take the issues whose changes actually landed (merged this batch) from the ledger; parked or blocked issues are out of scope because their changes are not deployed.
    - For each merged issue, derive concrete flows to exercise from its acceptance criteria / expected outcome and the behavior its PR changed.
-   - Add the integration points between batch issues — where two merged changes touch the same flow, data, or screen — since cross-change interactions are a common source of regressions no single PR review would catch.
+   - Add the integration points between batch issues, where two merged changes touch the same flow, data, or screen, since cross-change interactions are a common source of regressions no single PR review would catch.
 
 3. Run QA in a fresh agent.
    - Spawn the `quality-assurance` agent (fresh context; not the implementer or reviewer of any issue in the batch). Give it the scoped flow list, the merged issue/PR references, and the target environment.
@@ -301,7 +301,7 @@ Resolve the QA target and auth from `AGENTS.md` § Environments and § Agent Log
 
 4. File and link bugs.
    - New bugs are filed as GitHub issues at the board's backlog status (per the `quality-assurance` workflow), using the repo issue template and Issue Type `Bug`.
-   - When a bug traces to a specific merged PR/issue, reference it so the trail is clear, and note it was found by this batch's QA sweep. Do not re-open or revert the merged PR — the fix is new work.
+   - When a bug traces to a specific merged PR/issue, reference it so the trail is clear, and note it was found by this batch's QA sweep. Do not re-open or revert the merged PR; the fix is new work.
    - These backlog bugs are what `backlog-refine` grooms next, closing the loop.
 
 5. Record QA results in the ledger: flows tested, bugs filed (with URLs), reproducible-but-unfiled observations, and any validation limits.

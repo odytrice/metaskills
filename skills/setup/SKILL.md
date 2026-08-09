@@ -5,7 +5,7 @@ description: Set up, repair, or reconfigure a development, Docker Compose, CI, o
 
 # Setup
 
-Use this skill when asked to set up, repair, or reconfigure the project's environment. All project facts come from `AGENTS.md` at the repository root — this skill contains none.
+Use this skill when asked to set up, repair, or reconfigure the project's environment. All project facts come from `AGENTS.md` at the repository root; this skill contains none.
 
 ## Resolve Project Facts First
 
@@ -18,7 +18,7 @@ Read `AGENTS.md` and resolve:
 | Environments and deployment repo (for Kubernetes preparation) | § Environments, § Repositories |
 | Local auth wiring (mock auth, test credentials) | § Agent Login |
 
-If § Build & Validation is missing, say so and stop — do not guess commands or versions.
+If § Build & Validation is missing, say so and stop; do not guess commands or versions.
 
 ## Supported Modes
 
@@ -33,7 +33,7 @@ Ask which mode if it is not clear.
 
 ### 1. Check the toolchain
 
-Verify each tool is present at the versions AGENTS.md specifies — do not assume versions:
+Verify each tool is present at the versions AGENTS.md specifies; do not assume versions:
 
 ```powershell
 dotnet --info
@@ -44,7 +44,7 @@ gh --version
 kubectl version --client
 ```
 
-Adjust the list to the stacks the project actually uses. Do not treat missing local tools as code failures — report them as environment gaps.
+Adjust the list to the stacks the project actually uses. Do not treat missing local tools as code failures; report them as environment gaps.
 
 ### 2. Start infrastructure
 
@@ -54,7 +54,7 @@ Start the project's backing services (database, cache, object storage, etc.) wit
 docker compose up -d infrastructure
 ```
 
-Use the compose target AGENTS.md names; if there is no `infrastructure` service group, `docker compose up -d` the individual services. Do not bring up the full app in containers unless AGENTS.md says the project runs that way — typically the server and frontend run on the host.
+Use the compose target AGENTS.md names; if there is no `infrastructure` service group, `docker compose up -d` the individual services. Do not bring up the full app in containers unless AGENTS.md says the project runs that way; typically the server and frontend run on the host.
 
 ### 3. Restore, build, and test the backend
 
@@ -76,7 +76,7 @@ npm run check
 npm run lint
 ```
 
-Skip targets the project does not define (some projects have no lint target — use whatever § Build & Validation lists).
+Skip targets the project does not define (some projects have no lint target; use whatever § Build & Validation lists).
 
 ### 5. Run the app
 
@@ -87,7 +87,7 @@ Use the run command § Build & Validation documents (a build-script target, or r
 - **Host-side config must use `127.0.0.1`, not `localhost`** for connections from the host to containerized services, unless AGENTS.md explicitly says otherwise.
 - Docker Compose service-to-service config uses compose service names (e.g. `postgres`, `redis`, `minio`), never `127.0.0.1`.
 - Do not commit real secrets: no `.env` files, credentials, API keys, or user-specific config overrides. Keep example/config-template files safe and non-secret.
-- Production secrets come from CI/CD secrets, Kubernetes secret generators in the deployment repo, or external secret management — never from source-controlled files.
+- Production secrets come from CI/CD secrets, Kubernetes secret generators in the deployment repo, or external secret management; never from source-controlled files.
 
 ## Mock Authentication
 
@@ -132,7 +132,7 @@ If AGENTS.md documents no mock auth, configure the real auth provider per its in
 
 ## Verification
 
-Run the minimum validation from § Build & Validation — typically the backend test command and the frontend check/lint commands, and the full build target for a complete setup.
+Run the minimum validation from § Build & Validation; typically the backend test command and the frontend check/lint commands, and the full build target for a complete setup.
 
 ## Output
 

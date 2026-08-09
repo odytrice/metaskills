@@ -13,9 +13,9 @@ The clarity gate is still mandatory and still human-answered; it is batched to t
 
 Resolve every project-specific value at runtime from the repository's `AGENTS.md`:
 
-- **§ Project Board** — board owner/org, project number, and the `Status` option names, including which status is the backlog and which is "ready for work".
-- **§ Repositories** — the app repo slug and issue template path.
-- **§ Code Layout & Tech Stack** — where code lives, to ground each readiness assessment.
+- **§ Project Board**: board owner/org, project number, and the `Status` option names, including which status is the backlog and which is "ready for work".
+- **§ Repositories**: the app repo slug and issue template path.
+- **§ Code Layout & Tech Stack**: where code lives, to ground each readiness assessment.
 
 If a required section is missing, say which one and stop. Do not guess.
 
@@ -43,7 +43,7 @@ Parallel fan-out:
 
 - **Default**: the board's backlog status column (the un-refined status named in `AGENTS.md` § Project Board).
 - **Overrides**: an explicit issue list, a label query, or a milestone.
-- If there is no project board, "backlog" is undefined — require an explicit scope (list, label, or milestone) and stop and ask when none is given.
+- If there is no project board, "backlog" is undefined; require an explicit scope (list, label, or milestone) and stop and ask when none is given.
 
 ## Dependency Hierarchy And Waves
 

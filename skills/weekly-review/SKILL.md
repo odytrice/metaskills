@@ -5,15 +5,15 @@ description: Generate a weekly developer status update from GitHub issues, PRs, 
 
 # Weekly Review Generation
 
-Use this skill to produce a weekly engineering status update for the current project. This is deterministic aggregation, not frontier reasoning — when delegating, prefer a cost-efficient model with `Docs/` write access and read-only `gh`/`git`.
+Use this skill to produce a weekly engineering status update for the current project. This is deterministic aggregation, not frontier reasoning; when delegating, prefer a cost-efficient model with `Docs/` write access and read-only `gh`/`git`.
 
 ## Prerequisites
 
 Read the repository's `AGENTS.md` first. This skill depends on:
 
-- **§ Project Overview** — to understand what the product is and pick sensible themes.
-- **§ Repositories** — app repo slug, and the deployment repo slug if one exists.
-- **§ Project Board** — owner/org, project number, and Status option names (optional; skip board counts if absent).
+- **§ Project Overview**: to understand what the product is and pick sensible themes.
+- **§ Repositories**: app repo slug, and the deployment repo slug if one exists.
+- **§ Project Board**: owner/org, project number, and Status option names (optional; skip board counts if absent).
 
 If `AGENTS.md` or § Repositories is missing, say so and stop rather than guess.
 
@@ -48,7 +48,7 @@ When AGENTS.md § Project Board defines a board:
 gh project item-list <project-number> --owner <owner> --format json --limit 200
 ```
 
-3. **Group by theme.** Derive themes from the data — do not use a fixed list. Sources for themes, in order:
+3. **Group by theme.** Derive themes from the data; do not use a fixed list. Sources for themes, in order:
    - Issue/PR labels and milestones actually present in the gathered data.
    - Product areas described in AGENTS.md § Project Overview.
    - Recurring subsystems visible in commit messages and file paths.
@@ -93,7 +93,7 @@ Use this structure:
 - Open issues by priority/label when labels support it.
 - Highest-priority blockers open/closed this week.
 - PRs merged this week; PRs currently open.
-- Test/build status if known — never claimed, only observed.
+- Test/build status if known; never claimed, only observed.
 - CI/deployment pipeline status: last run result per repo (app, and deployment repo when one exists).
 - Project board counts by Status option when a board is defined in AGENTS.md.
 - Milestone/ship-list ticket status when AGENTS.md or `Docs/plans/` defines a launch or milestone scope.

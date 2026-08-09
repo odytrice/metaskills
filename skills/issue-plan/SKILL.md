@@ -13,9 +13,9 @@ This skill plans an issue; it does not implement it. Implementation is `dev-cycl
 
 This skill contains no project facts. Resolve them at runtime from the repository's `AGENTS.md` (per the harness contract):
 
-- **§ Project Board** — board owner/org, project number, and the `Status` option names in lifecycle order. Look up field/option IDs live via `gh project field-list`; never assume them.
-- **§ Repositories** — the app repo slug (`<owner>/<repo>`) used in `gh api` calls.
-- **§ Code Layout & Tech Stack** — where backend/frontend/tests/migrations live, for grounding tasks in real paths.
+- **§ Project Board**: board owner/org, project number, and the `Status` option names in lifecycle order. Look up field/option IDs live via `gh project field-list`; never assume them.
+- **§ Repositories**: the app repo slug (`<owner>/<repo>`) used in `gh api` calls.
+- **§ Code Layout & Tech Stack**: where backend/frontend/tests/migrations live, for grounding tasks in real paths.
 
 If a section this skill needs is missing from `AGENTS.md`, say so and stop. Do not guess.
 
@@ -44,7 +44,7 @@ The issue's board status is the claim lock. `issue-plan` only claims issues in `
 
 - The claim is the first mutating action: move the issue `Ready -> In progress` immediately, before decomposing or posting any ledger.
 - Claim only from `Ready`. If the issue is in `Backlog`, it is not refined — stop and route it through `issue-refine` first. If it is already `In progress`, `In review`, or `Done` (and not your own prior plan run — an existing plan ledger is the tell), it is owned or finished — stop, report it as already claimed/owned, and do not touch its status or ledger.
-- The claim is optimistic: read status, confirm `Ready`, transition to `In progress`, then re-read and confirm the transition took and was not overwritten. If the re-read shows it changed under you, yield and report — do not proceed to plan.
+- The claim is optimistic: read status, confirm `Ready`, transition to `In progress`, then re-read and confirm the transition took and was not overwritten. If the re-read shows it changed under you, yield and report; do not proceed to plan.
 - Only after a confirmed claim do you post the plan ledger. If the project has no board (no § Project Board section content applies), skip the claim and treat the issue as claimable, but still maintain the single ledger.
 
 ## Workflow
@@ -58,7 +58,7 @@ The issue's board status is the claim lock. `issue-plan` only claims issues in `
    - Check the comments for an existing plan ledger (first body line is `<!-- plan-ledger -->`). If one exists, you are updating it, not creating a new one.
 
 2. Claim the issue (status as lock; only if a project board is in use).
-   - If step 1 found an existing plan ledger, this issue is already claimed by a prior plan run — you are updating that ledger, not making a fresh claim. Skip the claim transition and proceed (do not treat your own prior `In progress` as someone else's claim).
+   - If step 1 found an existing plan ledger, this issue is already claimed by a prior plan run; you are updating that ledger, not making a fresh claim. Skip the claim transition and proceed (do not treat your own prior `In progress` as someone else's claim).
    - Otherwise, read the item's current `Status`. If it is not `Ready`, stop: route `Backlog` items through `issue-refine`; report `In progress`/`In review`/`Done` items (with no plan ledger) as already claimed/owned and do not touch them.
    - Move the item `Ready -> In progress`. Resolve `<project-number>` and `<owner>` from `AGENTS.md` § Project Board and look up IDs live:
 
@@ -69,7 +69,7 @@ The issue's board status is the claim lock. `issue-plan` only claims issues in `
      gh project item-edit --project-id <project-id> --id <item-id> --field-id <status-field-id> --single-select-option-id <option-id>
      ```
 
-   - Re-read the item and confirm it is now `In progress`. If it changed under you (someone else claimed it concurrently), yield and report — do not plan it.
+   - Re-read the item and confirm it is now `In progress`. If it changed under you (someone else claimed it concurrently), yield and report; do not plan it.
 
 3. Build local context.
    - Use `AGENTS.md` § Code Layout & Tech Stack to find the areas the issue touches.
@@ -80,7 +80,7 @@ The issue's board status is the claim lock. `issue-plan` only claims issues in `
    - Order them by dependency. Note which tasks can proceed in parallel and which gate others.
    - Each task should map to a concrete code area and a validation signal (from `AGENTS.md` § Build & Validation).
 
-5. Compose the plan comment body in a temporary file `.tmp-plan-<number>.md`. Write it as UTF-8 WITHOUT a BOM — use a file-write tool, not PowerShell 5.1 `Out-File`/`Set-Content` (whose `utf8` encoding adds a BOM that breaks the first-line `<!-- plan-ledger -->` marker match). Use this shape:
+5. Compose the plan comment body in a temporary file `.tmp-plan-<number>.md`. Write it as UTF-8 WITHOUT a BOM; use a file-write tool, not PowerShell 5.1 `Out-File`/`Set-Content` (whose `utf8` encoding adds a BOM that breaks the first-line `<!-- plan-ledger -->` marker match). Use this shape:
 
    ```md
    <!-- plan-ledger -->
@@ -88,9 +88,9 @@ The issue's board status is the claim lock. `issue-plan` only claims issues in `
 
    _Single source of truth for this issue's tasks. Updated as work lands; do not add more comments._
 
-   - [ ] Task 1 — concrete unit, code area, validation
-   - [ ] Task 2 — ...
-   - [ ] Task 3 — ...
+   - [ ] Task 1: concrete unit, code area, validation
+   - [ ] Task 2: ...
+   - [ ] Task 3: ...
 
    ## Sequence
 
@@ -122,4 +122,4 @@ The issue's board status is the claim lock. `issue-plan` only claims issues in `
 
 ## Updating The Ledger During Execution
 
-`dev-cycle` (and any batch-execution worker) updates this same comment as tasks land — it does not edit the issue body checklist and does not add new comments. The contract is: keep the marker as the first line, check off tasks only when they are implemented and validated, surface blockers in `## Blockers`, and re-fetch the comment immediately before editing so concurrent updates are not lost.
+`dev-cycle` (and any batch-execution worker) updates this same comment as tasks land; it does not edit the issue body checklist and does not add new comments. The contract is: keep the marker as the first line, check off tasks only when they are implemented and validated, surface blockers in `## Blockers`, and re-fetch the comment immediately before editing so concurrent updates are not lost.

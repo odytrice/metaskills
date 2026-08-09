@@ -5,9 +5,9 @@ description: Review, commit, push, and deploy the current project through its CI
 
 # Deploy
 
-Review uncommitted changes, gate on review outcome, commit, push, and monitor the CI/CD pipeline to completion. All project facts come from `AGENTS.md` at the repository root — this skill contains none.
+Review uncommitted changes, gate on review outcome, commit, push, and monitor the CI/CD pipeline to completion. All project facts come from `AGENTS.md` at the repository root; this skill contains none.
 
-During this workflow you must not edit or create source files — only analyze, report, commit, push, and monitor. If the review gate surfaces blocking issues, report them and stop so the developer can fix them first.
+During this workflow you must not edit or create source files; only analyze, report, commit, push, and monitor. If the review gate surfaces blocking issues, report them and stop so the developer can fix them first.
 
 ## Resolve Project Facts First
 
@@ -21,7 +21,7 @@ Read `AGENTS.md` and resolve:
 | Build/test/lint commands | § Build & Validation |
 | CI job names, expected durations, polling cadence | § CI Pipeline (optional) |
 
-If § Environments, § Branch Map, § Repositories, or § Build & Validation is missing, say so and stop — do not guess. If § CI Pipeline is absent, fall back to `gh run watch <run-id> --exit-status` with a generic poll of about 60 seconds.
+If § Environments, § Branch Map, § Repositories, or § Build & Validation is missing, say so and stop; do not guess. If § CI Pipeline is absent, fall back to `gh run watch <run-id> --exit-status` with a generic poll of about 60 seconds.
 
 ## Safety Gates
 
@@ -67,8 +67,8 @@ Run the validation commands from § Build & Validation appropriate to the change
 
 1. Stage the intended changes (`git add -A`, or scoped paths if unrelated files are present).
 2. Commit with a clear, concise message matching the style of recent commits: imperative mood, no prefix, one sentence.
-3. **Never commit files that contain secrets** — `.env` files, credentials, user-specific config overrides, API keys. Warn if any are staged and unstage them before committing.
-4. Push to the remote branch that § Branch Map assigns to the target environment. For production this typically means merging the integration branch into the production branch and pushing it — only when explicitly instructed.
+3. **Never commit files that contain secrets**: `.env` files, credentials, user-specific config overrides, API keys. Warn if any are staged and unstage them before committing.
+4. Push to the remote branch that § Branch Map assigns to the target environment. For production this typically means merging the integration branch into the production branch and pushing it; only when explicitly instructed.
 
 ### Step 5: Monitor Pipeline
 
@@ -131,7 +131,7 @@ If the change is only to deployment manifests (configmaps, ingress, image tags) 
 
 1. Edit files in the deployment repo's overlay for the target environment.
 2. Commit and push to the deployment repo's default branch; its workflows apply the overlays.
-3. The app CI pipeline also pushes image-tag updates to the deployment repo — run `git pull --rebase` there before pushing, and never overwrite user edits.
+3. The app CI pipeline also pushes image-tag updates to the deployment repo; run `git pull --rebase` there before pushing, and never overwrite user edits.
 
 ## Rollback
 
