@@ -43,7 +43,7 @@ The plan is a single comment on the issue that holds the task checklist and refl
 The issue's board status is the claim lock. `issue-plan` only claims issues in `Ready` (use the actual option names from `AGENTS.md` § Project Board), and the move to `In progress` is the claim. This prevents two workers from picking up the same issue.
 
 - The claim is the first mutating action: move the issue `Ready -> In progress` immediately, before decomposing or posting any ledger.
-- Claim only from `Ready`. If the issue is in `Backlog`, it is not refined — stop and route it through `issue-refine` first. If it is already `In progress`, `In review`, or `Done` (and not your own prior plan run — an existing plan ledger is the tell), it is owned or finished — stop, report it as already claimed/owned, and do not touch its status or ledger.
+- Claim only from `Ready`. If the issue is in `Backlog`, it is not refined; stop and route it through `issue-refine` first. If it is already `In progress`, `In review`, or `Done` (and not your own prior plan run; an existing plan ledger is the tell), it is owned or finished; stop, report it as already claimed/owned, and do not touch its status or ledger.
 - The claim is optimistic: read status, confirm `Ready`, transition to `In progress`, then re-read and confirm the transition took and was not overwritten. If the re-read shows it changed under you, yield and report; do not proceed to plan.
 - Only after a confirmed claim do you post the plan ledger. If the project has no board (no § Project Board section content applies), skip the claim and treat the issue as claimable, but still maintain the single ledger.
 

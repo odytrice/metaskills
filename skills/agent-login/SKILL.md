@@ -56,4 +56,4 @@ Before filing a bug, verify:
 - Auth-provider configuration matches the environment (callback URLs, provider enabled, mock/service-agent variables set on both frontend and backend where applicable).
 - MFA users have a working non-prod delivery mechanism configured.
 
-File a bug only after the failure is reproducible with a known account and a clear expected result; with all secrets redacted.
+File a bug only after the failure is reproducible with a known account and a clear expected result, with all secrets redacted.

@@ -54,7 +54,7 @@ Start the project's backing services (database, cache, object storage, etc.) wit
 docker compose up -d infrastructure
 ```
 
-Use the compose target AGENTS.md names; if there is no `infrastructure` service group, `docker compose up -d` the individual services. Do not bring up the full app in containers unless AGENTS.md says the project runs that way; typically the server and frontend run on the host.
+Use the compose target AGENTS.md names; if there is no `infrastructure` service group, `docker compose up -d` the individual services. Do not bring up the full app in containers unless AGENTS.md says the project runs that way; the server and frontend typically run on the host.
 
 ### 3. Restore, build, and test the backend
 
@@ -132,7 +132,7 @@ If AGENTS.md documents no mock auth, configure the real auth provider per its in
 
 ## Verification
 
-Run the minimum validation from § Build & Validation; typically the backend test command and the frontend check/lint commands, and the full build target for a complete setup.
+Run the minimum validation from § Build & Validation, typically the backend test command and the frontend check/lint commands, and the full build target for a complete setup.
 
 ## Output
 

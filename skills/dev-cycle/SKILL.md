@@ -33,7 +33,7 @@ If a section this skill needs is missing from `AGENTS.md`, say so and stop. Do n
 - Use `rg` first for searches.
 - Do not overwrite user changes.
 - Keep edits scoped.
-- Reserve agent autonomy for well-specified work. The dangerous part of a change is the last 20%; ambiguous requirements, edge cases, integration points, and architectural trade-offs. If requirements are ambiguous, a business-logic assumption is required, or a structural trade-off surfaces mid-implementation, stop and surface it rather than inventing scope. Code that looks right and passes basic tests but encodes a wrong assumption is worse than an honest blocker.
+- Reserve agent autonomy for well-specified work. The dangerous part of a change is the last 20%: ambiguous requirements, edge cases, integration points, and architectural trade-offs. If requirements are ambiguous, a business-logic assumption is required, or a structural trade-off surfaces mid-implementation, stop and surface it rather than inventing scope. Code that looks right and passes basic tests but encodes a wrong assumption is worse than an honest blocker.
 - Use file edit/write tools for manual edits, never shell here-strings.
 - Follow the project's host-side vs. service-internal config conventions in `AGENTS.md` (e.g. no `localhost` where a loopback IP or service name is required).
 - Never use destructive git commands unless explicitly requested.

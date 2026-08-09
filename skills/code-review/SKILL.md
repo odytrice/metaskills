@@ -210,7 +210,7 @@ git branch -D <headRefName>
 
 ## Local Mode
 
-Local mode reviews the current working tree; typically as the pre-commit gate in a
+Local mode reviews the current working tree, typically as the pre-commit gate in a
 deploy or commit flow. No worktree or separate agent is required; review in place.
 
 ### Process

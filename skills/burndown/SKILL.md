@@ -73,7 +73,7 @@ You are not alone in the codebase; do not revert user or other-agent changes.
 
 ### Harnesses without subagents
 
-If the harness cannot spawn subagents, the coordinator may run `dev-cycle` sequentially itself for each issue; **except review**. Review must always run in a fresh context with no implementation history (a new session or a spawned agent), in its own review worktree. Never review from the context that produced the implementation.
+If the harness cannot spawn subagents, the coordinator may run `dev-cycle` sequentially itself for each issue. Review is the exception: it must always run in a fresh context with no implementation history (a new session or a spawned agent), in its own review worktree. Never review from the context that produced the implementation.
 
 ## Review-Agent Model
 
@@ -235,7 +235,7 @@ For each wave:
 1. Confirm the wave is unblocked: every dependency of every issue in it has merged. Re-confirm no two issues in the wave have overlapping write sets; if triage missed an overlap, pull the later issue into a subsequent wave before starting.
 2. For every issue in the wave, move its project item to the in-progress status (the claim). Skip and record any issue no longer in the expected source status, and drop anything that depended on it (or re-plan it into a later wave).
 3. Fan out the wave's `developer` workers in one dispatch: one worker per issue running `dev-cycle`, all in parallel, each with a narrow non-overlapping scope.
-4. For each worker, ensure it keeps changes issue-scoped, adds tests for the actual behavior fixed, checks off completed checklist tasks as PR work lands, and runs the validation required by `AGENTS.md` § Build & Validation; including the live-database integration suite when any DB tripwire file was touched.
+4. For each worker, ensure it keeps changes issue-scoped, adds tests for the actual behavior fixed, checks off completed checklist tasks as PR work lands, and runs the validation required by `AGENTS.md` § Build & Validation, including the live-database integration suite when any DB tripwire file was touched.
 5. Review each worker's result and diff before accepting it.
 6. Hand the wave's PRs to Phase 4 for review and integration. The next wave starts only after this wave's gating PRs are merged.
 7. Record per issue: result, wave, changed paths, checkbox updates, validation, and status transition in the ledger.
@@ -270,9 +270,9 @@ This is the guardrail against the `developer` and `architect` ping-ponging a PR 
 - **A round.** When a review returns Critical or High findings and the cap is not yet reached:
   1. Dispatch the `developer` agent to fix only the specific findings raised, in the existing PR branch. Give it the review comment (or the enumerated findings), tell it to stay scoped to them with no unrelated changes, and to re-run the validation from `AGENTS.md` § Build & Validation.
   2. Re-review from a fresh `architect` context, with the review worktree rebuilt against the PR's latest head, pointing it at the prior review comment on the PR and telling it this is a scoped re-review of revision round N.
-- **Scoped re-review (convergence).** A re-review is not a fresh full review; it follows the `code-review` skill's Re-review discipline; verify each prior finding as Resolved / Partially resolved / Not resolved, and raise new findings only for regressions the fix introduced or genuinely missed Critical/High issues, never fresh Medium/Low nitpicks. The convergence rule is `code-review`'s and applies to every re-review; the two-round cap here is burndown's own bound on top of it.
+- **Scoped re-review (convergence).** A re-review is not a fresh full review; it follows the `code-review` skill's Re-review discipline: verify each prior finding as Resolved / Partially resolved / Not resolved, and raise new findings only for regressions the fix introduced or genuinely missed Critical/High issues, never fresh Medium/Low nitpicks. The convergence rule is `code-review`'s and applies to every re-review; the two-round cap here is burndown's own bound on top of it.
 - **Contested finding.** If the `developer` reports that it disagrees with a finding (believes it is wrong or out of scope) instead of fixing it, or the `architect` re-raises a finding the developer already reported as fixed, do not spend another round on it; it is a judgment dispute for the human.
-- **Park, don't halt.** When the loop exits without a clean PR, the cap is reached with Critical/High findings still open, or a finding is contested, park that PR as manual intervention in the ledger (record the round reached, the exit reason, and, for a dispute, both positions), then move on to the next non-blocking item. Do not stop the batch or wait on the user mid-run. A parked PR blocks anything that depends on it: park those dependents too and continue with independent work. The clean exit is the only one that proceeds to merge (step 5); everything parked is surfaced in the Phase 6 report.
+- **Park, don't halt.** When the loop exits without a clean PR because the cap was reached with Critical/High findings still open or a finding was contested, park that PR as manual intervention in the ledger (record the round reached, the exit reason, and, for a dispute, both positions), then move on to the next non-blocking item. Do not stop the batch or wait on the user mid-run. A parked PR blocks anything that depends on it: park those dependents too and continue with independent work. The clean exit is the only one that proceeds to merge (step 5); everything parked is surfaced in the Phase 6 report.
 
 Before considering the batch done:
 

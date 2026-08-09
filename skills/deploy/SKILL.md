@@ -68,7 +68,7 @@ Run the validation commands from § Build & Validation appropriate to the change
 1. Stage the intended changes (`git add -A`, or scoped paths if unrelated files are present).
 2. Commit with a clear, concise message matching the style of recent commits: imperative mood, no prefix, one sentence.
 3. **Never commit files that contain secrets**: `.env` files, credentials, user-specific config overrides, API keys. Warn if any are staged and unstage them before committing.
-4. Push to the remote branch that § Branch Map assigns to the target environment. For production this typically means merging the integration branch into the production branch and pushing it; only when explicitly instructed.
+4. Push to the remote branch that § Branch Map assigns to the target environment. For production, do this only when explicitly instructed; it typically means merging the integration branch into the production branch and pushing it.
 
 ### Step 5: Monitor Pipeline
 
