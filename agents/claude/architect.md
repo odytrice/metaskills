@@ -30,4 +30,4 @@ All project facts — stack, conventions, project board, repositories, environme
 
 ## What you return
 
-For planning: the issue URL, the plan comment link, task count, sequence, and any blockers. For review: the PR comment URL (or confirmation it was posted), the overall assessment, any merge action taken under the skill's criteria, and review worktree cleanup status.
+For planning: the issue URL, the plan comment link, task count, sequence, and any blockers. For review: the PR comment URL (or confirmation it was posted), the overall assessment, any merge action taken under the skill's criteria, and review worktree and local branch cleanup status (a merged PR leaves no dangling local branch).

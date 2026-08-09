@@ -82,7 +82,7 @@ After each worker opens a PR, review it before moving to the next issue:
 - Spawn the `architect` agent (review-only; it must not edit product code) to run `code-review` against the PR from a separate review worktree — never the implementation worktree.
 - Post the review output as a PR comment.
 - If the review has any Critical or High finding, do not stop outright and do not loop without limit: run the bounded revision loop (Phase 4). Dispatch the `developer` agent to fix the specific findings, then re-review from a fresh `architect` context scoped to those findings. Allow at most two such rounds; if the PR is still not clean after the second re-review, or a finding is contested between the two agents, park that PR as manual intervention in the ledger and move on to the next non-blocking issue or PR — do not halt the batch to wait on it.
-- If the review is clean and the `code-review` skill's auto-merge criteria are met (required checks passed, PR mergeable, no Critical/High findings), the coordinator squash-merges and deletes the remote branch. If any auto-merge criterion is unmet, do not force it: leave the PR for the user to merge, note it in the ledger, and move on to the next non-blocking item rather than halting the batch.
+- If the review is clean and the `code-review` skill's auto-merge criteria are met (required checks passed, PR mergeable, no Critical/High findings), the coordinator squash-merges, deletes the remote branch, and deletes the local PR head branch. If any auto-merge criterion is unmet, do not force it: leave the PR for the user to merge, note it in the ledger, and move on to the next non-blocking item rather than halting the batch.
 - The coordinator merges; the review agent reports findings and comment status but does not merge.
 
 Review worktree, review checks, PR-comment shape, severity guide, re-review convergence, and merge mechanics live in `code-review`; do not re-embed them here. Command shape, with `<base>` from `AGENTS.md` § Branch Map:
@@ -108,6 +108,15 @@ Merge command shape when criteria are met:
 ```powershell
 gh pr merge <pr-number> --squash --delete-branch
 ```
+
+After a confirmed merge, delete the local PR head branch too, so the batch leaves no dangling branches. `--delete-branch` removes only the remote branch, and `git worktree remove` leaves behind the local branch that `gh pr checkout` created in the review worktree. From the original repo:
+
+```powershell
+gh pr view <pr-number> --json state,headRefName
+git branch -D <headRefName>
+```
+
+Delete it only once GitHub confirms the PR is merged; force deletion (`-D`) is expected for squash merges. If the branch is still checked out in a worktree or the PR is not confirmed merged, leave it and note it.
 
 If branch protection, failed checks, conflicts, or permissions block the merge, park that item as manual intervention and move on to the next non-blocking item; do not halt the batch. The PR body must end with `Closes #<issue-number>` as its final line for fully resolved issues so the merge closes the issue and project automation moves it to `Done`; reference the ticket only there.
 
@@ -249,7 +258,7 @@ Review and integrate each wave's PRs. A wave typically opens several PRs at once
 4. If Critical or High findings exist, enter the Bounded Revision Loop below instead of stopping immediately or re-reviewing without limit.
 5. If the review is clean and the `code-review` auto-merge criteria are met, squash-merge with remote branch deletion. If it is clean but a criterion is unmet (checks pending, branch protection, merge conflict), leave it for the user to merge, note that in the ledger, and move on — do not block the batch waiting on it.
 6. Rely on `Closes #<issue-number>` automation to close the issue and move it to done.
-7. Clean up the review worktree (and any revision-round worktrees).
+7. Clean up the review worktree (and any revision-round worktrees), and delete the merged PR's local head branch so no dangling branch remains (see Review-Agent Model).
 8. Update the ledger with PR URL, the review round reached and loop-exit reason, review comment status, merge status, and cleanup status.
 9. Move to the next non-blocking PR or issue.
 
@@ -268,7 +277,7 @@ This is the guardrail against the `developer` and `architect` ping-ponging a PR 
 Before considering the batch done:
 
 - Run the widest practical validation from `AGENTS.md` § Build & Validation once after the batch if not already covered by per-PR validation.
-- Make sure no temporary files, secrets, debug output, or local worktrees remain.
+- Make sure no temporary files, secrets, debug output, local worktrees, or merged-PR local branches remain.
 - Update the ledger with final status and links.
 
 ## Phase 5: QA Sweep

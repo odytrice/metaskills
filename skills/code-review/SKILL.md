@@ -180,12 +180,31 @@ merging the base branch triggers (e.g. a deployment pipeline); do not merge if t
 wants to control deploy timing.
 
 After posting the comment and performing any eligible squash merge, report the PR
-comment URL, the merge commit if merged, and review worktree and local branch cleanup
-status.
+comment URL, the merge commit if merged, and the worktree and local branch cleanup
+status (see Post-Merge Cleanup).
 
-After removing the review worktree, delete the local PR head branch if GitHub confirms the
-PR is merged and its tip still matches `headRefOid`. Force deletion is allowed for squash
-merges. Otherwise, leave the branch intact and report why.
+### Post-Merge Cleanup
+
+A merged PR must not leave a dangling local branch behind. `gh pr merge --delete-branch`
+removes only the *remote* branch, and `git worktree remove` removes only the review
+worktree; the local PR head branch that `gh pr checkout` created still remains, so delete
+it explicitly.
+
+After removing the review worktree (see Review Worktree), from the original repo:
+
+```powershell
+gh pr view <number> --json state,mergedAt,headRefName,headRefOid
+git branch -D <headRefName>
+```
+
+- Delete the local head branch only when GitHub confirms the PR is merged and the local
+  branch tip still matches `headRefOid`. Force deletion (`-D`) is expected for squash
+  merges, whose local tip is not an ancestor of the base branch.
+- If the branch is still checked out in another worktree, the PR is not confirmed merged,
+  or the branch name cannot be resolved, leave it intact and report why.
+- This runs on every path where this skill is the merger, so a merge here never leaves a
+  local branch behind. When another workflow (such as `burndown`) performs the merge
+  itself, that workflow owns the same local-branch cleanup.
 
 ---
 
