@@ -12,7 +12,7 @@ Checks are `checklist.md` (stack-neutral, this directory) plus § Review Notes; 
 ## Modes
 
 - **PR mode** (given a PR number, URL, or branch): separate agent and review worktree; post the review as a PR comment; squash-merge when the criteria below hold.
-- **Local mode** (uncommitted working-tree changes, or the pre-commit gate of a deploy/commit flow): review in place, report to the user; any Critical or High finding blocks the commit.
+- **Local mode** (uncommitted working-tree changes, or a pre-commit gate): review in place, report to the user; any Critical or High finding blocks the commit.
 
 ## PR Mode
 

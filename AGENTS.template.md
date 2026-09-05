@@ -14,7 +14,7 @@ Claude Code note: the project must also have a `CLAUDE.md` whose first line is
 
 **Keep it lean.** Every token of AGENTS.md is loaded into every session.
 Sections nearly every task needs stay inline; sections one workflow consumes
-(CI Pipeline, Review Notes, Agent Login detail) are a few summary lines plus
+(Review Notes, Agent Login detail) are a few summary lines plus
 a pointer to a detail file under `Docs/agents/`, which the skill reads before
 acting on the section.
 
@@ -80,16 +80,16 @@ the codebase, plus:
 ## Repositories
 
 - App repo slug (e.g. `org/app`)
-- Deployment repo slug and its local sibling path, if one exists
+- Deployment repo slug, if `weekly-review` should report its pipeline runs
 - Issue template path (e.g. `.github/ISSUE_TEMPLATE/issue.md`)
 
 ## Environments
 
-For each environment (dev/staging/prod): URL, cluster/context name,
-namespace, and the Docker image names published for it. For Kubernetes
-targets also list the deployment names the deploy skill verifies on rollout
-and any post-deploy smoke checks (health endpoint, key pages). State `none`
-if the project does not deploy.
+The URL of each running environment (dev/staging/prod) that `qa` and the
+`burndown` QA sweep may target, and which one is the default QA target.
+Deployment itself is project-specific and outside the shared harness; keep
+its mechanics in a project-level skill or detail file. State `none` if the
+project has no running environments.
 
 ## Branch Map
 
@@ -124,9 +124,3 @@ existing bugs reviewers should flag interactions with, extra checks, and
 areas of the codebase under active migration (with what supersedes what).
 Stack-specific checklists belong in a detail file this section points to
 (e.g. `Docs/agents/review-checklist.md`).
-
-## CI Pipeline (optional)
-
-Job names, expected durations, and polling guidance for the deploy monitor.
-If absent, the deploy skill falls back to `gh run watch` with a generic
-polling cadence.

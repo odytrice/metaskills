@@ -63,17 +63,15 @@ If a board is added later, record the owner/org, project number, and Status life
 
 - App repo slug: `odytrice/metaskills`.
 - Deployment repo: none.
-- Local deployment sibling path: none.
 - Issue template path: none documented. If no template exists, issue workflows should use their fallback headings.
 
 ## Environments
 
-This repository does not deploy an application and has no dev/staging/prod runtime environments, Kubernetes contexts, namespaces, or Docker images.
+None. This repository has no running environments.
 
 ## Branch Map
 
 - `master` is the primary integration branch for harness changes.
-- No deployment pipeline is documented.
 - Pull requests should target `master` unless the user explicitly names another base branch.
 
 ## Agent Login
@@ -92,7 +90,3 @@ Key review checks:
 - Keep opencode and Codex command wrappers thin; they should not duplicate skill workflows.
 - Keep `sync.ps1` and `sync.sh` behavior equivalent when adding, renaming, or removing managed files.
 - Do not alter user-level config directories directly from this repo except through the sync scripts or an explicit user request.
-
-## CI Pipeline
-
-No CI pipeline is currently documented for this repository. If a workflow is added, document its file, expected jobs, and expected durations here.

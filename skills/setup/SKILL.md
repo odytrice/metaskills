@@ -1,13 +1,13 @@
 ---
 name: setup
-description: Set up, repair, or reconfigure the project's local, Docker Compose, CI, or deployment-preparation environment from its AGENTS.md. Use when asked to set up, install, bootstrap, or fix the dev environment.
+description: Set up, repair, or reconfigure the project's local, Docker Compose, or CI environment from its AGENTS.md. Use when asked to set up, install, bootstrap, or fix the dev environment.
 ---
 
 # Setup
 
-Project facts from `AGENTS.md`: **§ Build & Validation** (toolchain versions, commands, compose targets; missing: name it and stop, never guess commands or versions), **§ Code Layout & Tech Stack**, **§ Environments** and **§ Repositories** (deployment preparation), **§ Agent Login** (local auth wiring, mock auth).
+Project facts from `AGENTS.md`: **§ Build & Validation** (toolchain versions, commands, compose targets; missing: name it and stop, never guess commands or versions), **§ Code Layout & Tech Stack**, **§ Agent Login** (local auth wiring, mock auth).
 
-Modes: local development; Docker Compose (infrastructure in containers, app on the host unless `AGENTS.md` says otherwise); CI; Kubernetes preparation via the deployment repo when § Repositories documents one (deploys themselves are `deploy`). Ask which if unclear.
+Modes: local development; Docker Compose (infrastructure in containers, app on the host unless `AGENTS.md` says otherwise); CI. Ask which if unclear.
 
 ## Local Development
 

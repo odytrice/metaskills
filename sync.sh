@@ -141,7 +141,10 @@ install_set() {
 # machine has synced at least once with manifests in place.
 for legacy in "$claude_skills/plan" "$opencode_skills/plan" "$codex_skills/plan" \
               "$opencode_command/plan.md" "$codex_prompts/plan.md" \
-              "$claude_skills/agent-login" "$opencode_skills/agent-login" "$codex_skills/agent-login"; do
+              "$claude_skills/agent-login" "$opencode_skills/agent-login" "$codex_skills/agent-login" \
+              "$claude_skills/deploy" "$opencode_skills/deploy" "$codex_skills/deploy" \
+              "$opencode_command/deploy.md" "$codex_prompts/deploy.md" \
+              "$claude_agents/deploy.md" "$opencode_agents/deploy.md" "$codex_agents/deploy.toml"; do
     if [[ -e "$legacy" ]]; then
         if $dry_run; then echo "would remove legacy '$legacy'"; else rm -rf "$legacy"; fi
     fi

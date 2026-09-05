@@ -59,12 +59,15 @@ sync.sh        same installer for macOS/Linux
 ## The workflow the skills compose into
 
 ```
-issue-raise -> issue-refine -> [ dev-cycle ............................... ] -> deploy
-   (create,     (the What:      issue-plan  -> issue-implement -> code-review    (gate,
-    Backlog)     -> Ready)      architect      developer          architect       ship,
-                                the How,       worktree,          review,         watch CI)
+issue-raise -> issue-refine -> [ dev-cycle ............................... ]
+   (create,     (the What:      issue-plan  -> issue-implement -> code-review
+    Backlog)     -> Ready)      architect      developer          architect
+                                the How,       worktree,          review,
                                 claim, ledger  ledger, PR         merge, Done
 ```
+
+Deployment is out of scope: it means something different in every project,
+so it lives in the consuming repo (its own skill, or `AGENTS.md`), not here.
 
 tracked on the project board as `Backlog -> Ready -> In progress -> In review -> Done`.
 

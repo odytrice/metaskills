@@ -152,7 +152,10 @@ function Install-Set {
 $legacy = @(
     (Join-Path $targets.ClaudeSkills 'plan'), (Join-Path $targets.OpencodeSkills 'plan'), (Join-Path $targets.CodexSkills 'plan'),
     (Join-Path $targets.OpencodeCommand 'plan.md'), (Join-Path $targets.CodexPrompts 'plan.md'),
-    (Join-Path $targets.ClaudeSkills 'agent-login'), (Join-Path $targets.OpencodeSkills 'agent-login'), (Join-Path $targets.CodexSkills 'agent-login')
+    (Join-Path $targets.ClaudeSkills 'agent-login'), (Join-Path $targets.OpencodeSkills 'agent-login'), (Join-Path $targets.CodexSkills 'agent-login'),
+    (Join-Path $targets.ClaudeSkills 'deploy'), (Join-Path $targets.OpencodeSkills 'deploy'), (Join-Path $targets.CodexSkills 'deploy'),
+    (Join-Path $targets.OpencodeCommand 'deploy.md'), (Join-Path $targets.CodexPrompts 'deploy.md'),
+    (Join-Path $targets.ClaudeAgents 'deploy.md'), (Join-Path $targets.OpencodeAgents 'deploy.md'), (Join-Path $targets.CodexAgents 'deploy.toml')
 )
 foreach ($path in $legacy) {
     if ((Test-Path $path) -and $PSCmdlet.ShouldProcess($path, 'remove legacy')) { Remove-Item -Recurse -Force $path }
