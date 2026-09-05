@@ -38,6 +38,7 @@ check() {
         grep -nH '^```powershell' "$dir"/*.md 2>/dev/null | sed "s|^$repo/|FAIL: powershell fence in |" && failures=$((failures + 1))
         grep -nHE '^\s*(Set-Location|Set-Content|Remove-Item|Out-File)\b|gh --%' "$dir"/*.md 2>/dev/null \
             | sed "s|^$repo/|FAIL: PowerShell-only command in |" && failures=$((failures + 1))
+        [[ -f "$repo/commands/$name.md" ]] || fail "skills/$name has no commands/$name.md"
     done
 
     # No em/en dashes anywhere in the repo (U+2014, U+2013).

@@ -29,19 +29,23 @@ When changing a workflow, update all affected dialects together:
 
 ## Build & Validation
 
-There is no compiled application or automated test suite in this repo. Validate harness changes with targeted inspection and script dry-runs:
+There is no compiled application or automated test suite in this repo. The sync scripts carry the lint: run it first, then inspect and dry-run:
 
 ```powershell
 git status --short
 git diff --check
+.\sync.ps1 -Check
 .\sync.ps1 -WhatIf
 ```
 
 For Unix-shell changes, also review `sync.sh` and, when a Bash environment is available, run:
 
 ```bash
+./sync.sh --check
 ./sync.sh --dry-run
 ```
+
+`--check` / `-Check` verifies skill frontmatter, skill/command pairing in both directions, agent body parity across the three dialects, PowerShell-only shell samples, and em/en dashes. Both scripts must report the same findings.
 
 For skill or agent changes, read the changed files and verify:
 

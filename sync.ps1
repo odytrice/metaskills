@@ -38,6 +38,7 @@ function Invoke-Check {
                 if ($lines[$i] -match '^\s*(Set-Location|Set-Content|Remove-Item|Out-File)\b|gh --%') { Fail "PowerShell-only command in ${rel}:$($i + 1)" }
             }
         }
+        if (-not (Test-Path (Join-Path $repo "commands\$name.md"))) { Fail "skills/$name has no commands/$name.md" }
     }
 
     # No em/en dashes anywhere in the repo (U+2014, U+2013).

@@ -63,13 +63,14 @@ issue-raise -> issue-refine -> [ dev-cycle ............................... ]
    (create,     (the What:      issue-plan  -> issue-implement -> code-review
     Backlog)     -> Ready)      architect      developer          architect
                                 the How,       worktree,          review,
-                                claim, ledger  ledger, PR         merge, Done
+                                                                 claim, ledger  ledger, PR         merge, Done
 ```
+
+Progress is tracked on the project board as
+`Backlog -> Ready -> In progress -> In review -> Done`.
 
 Deployment is out of scope: it means something different in every project,
 so it lives in the consuming repo (its own skill, or `AGENTS.md`), not here.
-
-tracked on the project board as `Backlog -> Ready -> In progress -> In review -> Done`.
 
 `dev-cycle` is the unit of delivery for one issue: it dispatches each phase to
 the role that owns it (architect plans, developer implements, a separate
@@ -122,13 +123,13 @@ Core mechanics:
 ```powershell
 .\sync.ps1          # install/update all three harnesses (Windows)
 .\sync.ps1 -WhatIf  # preview
-.\sync.ps1 -Check   # lint the repo (frontmatter, wrapper/skill pairing, dialect parity)
+.\sync.ps1 -Check   # lint the repo (frontmatter, skill/wrapper pairing both ways, dialect parity)
 ```
 
 ```bash
 ./sync.sh           # install/update all three harnesses (macOS/Linux)
 ./sync.sh --dry-run # preview
-./sync.sh --check   # lint the repo (frontmatter, wrapper/skill pairing, dialect parity)
+./sync.sh --check   # lint the repo (frontmatter, skill/wrapper pairing both ways, dialect parity)
 ```
 
 The script only touches items this repo manages. It writes a
