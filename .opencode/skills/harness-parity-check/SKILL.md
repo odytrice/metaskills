@@ -5,51 +5,38 @@ description: Check MetaSkills harness consistency across canonical skills, comma
 
 # Harness Parity Check
 
-Use this skill when the user asks to verify, audit, review, or sanity-check changes to this MetaSkills repository before syncing them into local agent harnesses.
+Use when the user asks to verify, audit, review, or sanity-check changes to this MetaSkills repository before syncing them into local agent harnesses.
 
 ## Goals
 
-- Canonical skills in `skills/<name>/SKILL.md` remain project-agnostic and derive project facts from the consuming project's `AGENTS.md`.
-- Command wrappers in `commands/<name>.md` stay thin and point at the same-named skill.
-- Agent role definitions remain aligned across `agents/opencode`, `agents/claude`, and `agents/codex` where each harness supports the same behavior.
-- The sync scripts install the same managed set described in `README.md`.
+- Canonical skills in `skills/<name>/SKILL.md` stay project-agnostic and resolve project facts from the consuming project's `AGENTS.md`.
+- Command wrappers in `commands/<name>.md` stay thin `$ARGUMENTS` handoffs to the same-named skill.
+- Agent role bodies are identical across `agents/opencode`, `agents/claude`, and `agents/codex`; only frontmatter/permission syntax differs.
+- Shared mechanics keep one owner (board transitions and ledger creation in `issue-plan`, sub-issue linking in `issue-raise`, worktree and PR workflow in `issue-implement`, review worktree and merge in `code-review`, the revision-loop bound in `dev-cycle`); other skills reference, not restate.
+- Role boundaries hold: `issue-refine` never designs; `issue-plan` is architect-only; `issue-implement` never plans or claims; `dev-cycle` and `burndown` never write code, post plans, transition the board, or merge.
+- The sync scripts install the same managed set `README.md` describes.
 
 ## Workflow
 
-1. Inspect changed files:
+1. Run the mechanical lint first; it covers frontmatter, wrapper/skill pairing, dialect coverage, and PowerShell-only shell samples:
 
-   ```powershell
-   git status --short
-   git diff --name-only
+   ```sh
+   ./sync.sh --check        # macOS/Linux
+   .\sync.ps1 -Check        # Windows
    ```
 
-2. For changed skills, read the full `SKILL.md` and confirm:
+2. Inspect the changed files (`git status --short`, `git diff --name-only`).
 
-   - Frontmatter includes `name` and `description`.
-   - The skill contains no project-specific facts such as repository slugs, board IDs, URLs, cluster names, image names, credentials, or hardcoded branch defaults.
-   - Required project facts are resolved from the target project's `AGENTS.md` sections.
-   - The skill says to stop rather than guess when a required `AGENTS.md` section is missing.
+3. For changed skills, read the full `SKILL.md` and confirm it contains no project facts (repo slugs, board IDs, URLs, cluster or image names, credentials, branch defaults, stack-specific tooling or idioms) and that required facts come from named `AGENTS.md` sections with the missing-section rule applied.
 
-3. For changed command wrappers in `commands/`, confirm each wrapper is only a short `$ARGUMENTS` handoff to the same-named skill.
+4. For changed agent roles, diff the body of the same role across the three dialects; anything beyond frontmatter and tool-name wording is a finding.
 
-4. For changed agent roles, compare the same role across all dialects:
+5. When files are added, renamed, or removed, confirm `README.md` still describes the managed set (the sync scripts discover files automatically and remove stale installs via their manifests).
 
-   - `agents/opencode/<role>.md`
-   - `agents/claude/<role>.md`
-   - `agents/codex/<role>.toml`
-
-   Confirm the role purpose, hard rules, and returned output expectations match, allowing only syntax/frontmatter differences required by the harness.
-
-5. Check installer coverage when files are added, renamed, or removed:
-
-   - `sync.ps1`
-   - `sync.sh`
-   - `README.md`
-
-6. Report findings first. If there are no findings, say that explicitly and mention any residual risk, such as not running the sync script.
+6. Report findings first. If there are none, say so and name any residual risk (e.g. sync not yet run, PowerShell script not exercised on this OS).
 
 ## Rules
 
-- Do not auto-edit files during a parity check unless the user explicitly asks you to fix findings.
-- Do not treat intentional dialect differences as findings when behavior remains equivalent.
-- Critical or High findings are anything that would install stale instructions, omit a managed file from sync, introduce project-specific facts into canonical skills, or let a workflow guess missing project facts.
+- Do not auto-edit during a parity check unless the user asks you to fix findings.
+- Intentional dialect differences are not findings when behavior is equivalent.
+- Critical or High: anything that would install stale instructions, omit a managed file, introduce project-specific facts into canonical skills, let a workflow guess missing project facts, or leave two skills owning the same mechanic with different text.

@@ -3,21 +3,37 @@
 Every project that uses the shared (user-level) harness skills MUST provide an
 `AGENTS.md` at the repository root containing the sections below, with these
 exact headings. The shared skills contain no project facts; they resolve
-everything through these sections at runtime. If a section is missing, the
-skill should say so and stop rather than guess.
+everything through these sections at runtime.
+
+**Missing-section rule (applies to every skill):** if a section a skill needs
+is missing or does not answer the question, the skill names the section and
+stops. It never guesses a project fact.
 
 Claude Code note: the project must also have a `CLAUDE.md` whose first line is
 `@AGENTS.md` so the contract is loaded there too.
 
-**Static vs. detail files.** AGENTS.md is static context; every token is
-loaded into every session, whatever the task. Keep it lean. Sections that
-nearly every task needs (Project Overview, Code Layout & Tech Stack, Build &
-Validation, Project Board, Repositories, Environments, Branch Map) stay
-inline. Sections consumed by a single workflow (CI Pipeline, Review Notes,
-the detail of Agent Login) should be a few summary lines plus a pointer to a
-detail file under `Docs/agents/` (e.g. `Docs/agents/ci-pipeline.md`), which
-the relevant skill loads on demand. A skill reading a section that names a
-detail file MUST read that file before acting on the section.
+**Keep it lean.** Every token of AGENTS.md is loaded into every session.
+Sections nearly every task needs stay inline; sections one workflow consumes
+(CI Pipeline, Review Notes, Agent Login detail) are a few summary lines plus
+a pointer to a detail file under `Docs/agents/`, which the skill reads before
+acting on the section.
+
+## Harness conventions the project must accommodate
+
+These are fixed by the shared skills, not chosen per project:
+
+- **Body is the What, ledger is the How.** An issue body is the durable spec
+  (summary, context, expected outcome, notes/constraints) and never carries a
+  design or task checklist. The approach, touch points, validation, risks, and
+  execution tasks live in exactly one issue comment whose first line is
+  `<!-- plan-ledger -->`.
+- **Worktrees** are created under `.worktrees/` at the repo root; skills stage
+  multi-line GitHub bodies in `.tmp-*` files at the repo root. Both patterns
+  must be in the project's `.gitignore`.
+- **Docs paths.** Skills write batch ledgers to `Docs/plans/`, status reports
+  to `Docs/status/`, and read workflow detail files from `Docs/agents/`.
+- **Board Status is the claim lock.** Moving an item out of the ready status
+  into the in-progress status is the claim; skills only claim from ready.
 
 ---
 
@@ -29,7 +45,9 @@ One or two paragraphs: what the product is, who uses it, current phase.
 
 Where the backend/frontend/tests live, the language/framework versions, and
 the architectural conventions reviewers must enforce (error-handling style,
-ID scheme, layer boundaries, etc.).
+ID scheme, layer boundaries, etc.). Include the project's migration convention
+and any build-order registration a new file needs (e.g. an explicit compile
+list), if either applies.
 
 ## Build & Validation
 
@@ -37,15 +55,27 @@ The exact commands agents run to build, test, lint, and format each part of
 the codebase, plus:
 
 - **DB tripwire files**: the list of files that, when touched, require the
-  live-database integration suite to run before a PR is opened or merged.
+  live-database integration suite to run before a PR is opened or merged
+  (state `none` if there is no database layer).
+- **Commit message convention**: one line describing the style (e.g.
+  "single-line, lowercase imperative, no trailing period, under 72 chars").
+  If absent, skills default to a single-line imperative subject under 72
+  characters matching recent history.
 
 ## Project Board
 
-- Owner/org and project number (e.g. `orgs/<org>/projects/<n>`)
+- Owner/org and project number (e.g. `orgs/<org>/projects/<n>`), or `none`.
 - The Status field's option names in lifecycle order
-  (e.g. `Backlog → Ready → In progress → In review → Done`)
+  (e.g. `Backlog → Ready → In progress → In review → Done`), naming which is
+  the backlog (un-refined), ready, in-progress, in-review, and done status.
+- **New-issue status**: the option newly filed issues are placed in (usually
+  the backlog status).
+- **Done automation**: whether the board moves items to the done status
+  automatically when the issue closes (GitHub's built-in "item closed"
+  workflow). If not, the skill that merges a PR sets the done status itself.
 - Skills must look up field/option IDs live via `gh project field-list`;
-  never record IDs here.
+  never record IDs here. If `gh project` reports a missing scope, the fix is
+  `gh auth refresh --hostname github.com -s project`.
 
 ## Repositories
 
@@ -56,56 +86,44 @@ the codebase, plus:
 ## Environments
 
 For each environment (dev/staging/prod): URL, cluster/context name,
-namespace, and the Docker image names published for it.
+namespace, and the Docker image names published for it. For Kubernetes
+targets also list the deployment names the deploy skill verifies on rollout
+and any post-deploy smoke checks (health endpoint, key pages). State `none`
+if the project does not deploy.
 
 ## Branch Map
 
 Which branch integrates to which environment, and which CI workflow file
 each branch/PR triggers (e.g. `main → staging via develop.yaml`,
 `prod → production via prod.yaml`, `PR → validate.yaml`). This is the single
-source of truth for base branches in dev-cycle/code-review.
+source of truth for base branches in issue-implement/code-review. Note whether
+merging the integration branch auto-deploys, since the reviewer's auto-merge
+and the burndown QA sweep both depend on it.
 
 ## Agent Login
 
-How a browser/QA agent authenticates against a running instance. This section
-is the contract every consuming project keeps; the shared harness no longer
-ships a generic `agent-login` skill, so this section is the floor.
+How a browser/QA agent authenticates against a running instance (for the
+`qa` skill) and how local development auth is wired (for `setup`): target
+URLs, auth mechanism, test credentials or seeding procedure, storage-state
+locations, MFA/OTP handling in non-prod, the authenticated element or route
+that proves login, local mock-auth flags, and anything project-specific that
+must never be captured in issues or logs. Keep it to a few lines plus a
+pointer to `Docs/agents/agent-login.md` or a project-level `agent-login`
+skill for complex flows; when that skill exists it is authoritative.
 
-**Project-specific (fill in):** target URLs, auth mechanism, test credentials
-or seeding procedure, storage-state locations, MFA/OTP handling in non-prod,
-and what must never be captured in issues or logs. Projects with complex flows
-may keep a project-level `agent-login` skill and point to it from here; when
-that skill exists it is authoritative.
-
-**Universal rules (required floor; applies even when a project-level `agent-login`
-skill exists):**
-
-- Target the project's staging/dev environment by default. Never use
-  production for QA logins unless the user explicitly instructs it.
-- Prefer non-interactive session establishment in this order: saved Playwright
-  storage-state files produced by the project's e2e harness, the project's
-  e2e setup seeding accounts, mock/service-agent auth where this section
-  documents it and the user has confirmed it is configured, manual UI login
-  last.
-- Verify login success by an authenticated layout element or route this
-  section names; absence of an error is not success.
-- Never capture or paste JWTs, refresh tokens, session cookies, OTPs,
-  passwords, client secrets, API keys, raw auth headers, or PII into GitHub
-  issues, PR comments, chat summaries, logs, or screenshots. Redact
-  screenshots that show tokens or personal data.
-- Seeded e2e credentials belong to throwaway e2e databases and must not be
-  assumed to exist in any other environment.
-- When host/cookie sensitivity matters, prefer `127.0.0.1` over `localhost`
-  in host-side config.
-- If a required field above is not documented and credentials are not
-  available from the user, stop and report that this project has no
-  agent-login guidance; do not invent credentials, URLs, or flows.
+The universal login rules (staging by default, non-interactive session order,
+verify by an authenticated element, never capture tokens or PII, mock auth
+only in local development, stop rather than invent credentials) live in the
+shared `qa` skill and apply to every project; do not restate them here.
 
 ## Review Notes
 
-Project-specific review guidance layered on top of the shared checklist:
-known existing bugs reviewers should flag interactions with, extra checks,
-and areas of the codebase under active migration (with what supersedes what).
+Project-specific review guidance layered on top of the shared, stack-neutral
+`code-review/checklist.md`: the stack's idioms and formatting rules, known
+existing bugs reviewers should flag interactions with, extra checks, and
+areas of the codebase under active migration (with what supersedes what).
+Stack-specific checklists belong in a detail file this section points to
+(e.g. `Docs/agents/review-checklist.md`).
 
 ## CI Pipeline (optional)
 

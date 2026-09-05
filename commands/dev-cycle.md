@@ -1,6 +1,6 @@
 ---
-description: Implement one issue end-to-end from worktree to pull request
+description: Run one issue through plan (architect), implement (developer), review and merge (architect)
 ---
-Use the `dev-cycle` skill to take the issue or change described by the arguments from context gathering through an isolated worktree, implementation, validation, and an open PR.
+Use the `dev-cycle` skill to run the issue referenced by the arguments through its full cycle: architect plan via `issue-plan` (skipped if a ledger exists), developer implementation via `issue-implement`, architect review and merge via `code-review`, with the bounded revision loop.
 
 $ARGUMENTS

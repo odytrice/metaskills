@@ -11,15 +11,27 @@ across three coding-agent harnesses with as much parity as each allows:
 
 Skills are written once and installed verbatim into all three harnesses.
 Commands are thin `$ARGUMENTS` wrappers around same-named skills. Agent role
-definitions exist in three dialects with near-identical bodies.
+definitions exist in three dialects with identical bodies; only the
+frontmatter/permission syntax differs.
 
 ## Design
 
 **Skills are project-agnostic.** Every project fact (board numbers, URLs,
-branch maps, image names, build commands, login flows) is resolved at runtime
-from the project's `AGENTS.md`, which must satisfy the contract in
-[`AGENTS.template.md`](AGENTS.template.md). If a required section is missing,
-skills say so and stop rather than guess.
+branch maps, image names, build commands, login flows, stack idioms) is
+resolved at runtime from the project's `AGENTS.md`, which must satisfy the
+contract in [`AGENTS.template.md`](AGENTS.template.md). If a required section
+is missing, skills say so and stop rather than guess. Shell samples in skills
+are plain `gh`/`git` invocations that run unchanged in bash, zsh, and
+PowerShell.
+
+**Agents are thin.** Each role is identity, which skill to load, the
+permission envelope, and what to return; nothing from the skill is restated.
+The three dialect bodies are byte-identical; `sync.sh --check` verifies it.
+
+**Token budget.** Skill descriptions are loaded into every session, so they
+say only what the skill does and when to trigger it. Rules live in exactly
+one skill and are referenced from others. Login rules that apply to every
+project live in the `qa` skill, not in each project's AGENTS.md.
 
 **Claude Code projects** additionally need a `CLAUDE.md` whose first line is
 `@AGENTS.md` so the same contract is loaded there.
@@ -41,44 +53,59 @@ agents/
 AGENTS.template.md   the per-project AGENTS.md contract
 sync.ps1       installs everything into ~/.claude, ~/.config/opencode, ~/.codex
 sync.sh        same installer for macOS/Linux
+.opencode/skills/    repo-local maintenance skills (not installed)
 ```
 
 ## The workflow the skills compose into
 
 ```
-issue-raise -> issue-refine -> issue-plan -> dev-cycle -> code-review -> deploy
-   (create)     (-> Ready)    (claim,   (worktree,     (PR or        (gate,
-                               ledger)   PR)            local mode)    ship, watch CI)
+issue-raise -> issue-refine -> [ dev-cycle ............................... ] -> deploy
+   (create,     (the What:      issue-plan  -> issue-implement -> code-review    (gate,
+    Backlog)     -> Ready)      architect      developer          architect       ship,
+                                the How,       worktree,          review,         watch CI)
+                                claim, ledger  ledger, PR         merge, Done
 ```
 
-tracked on the project board as `Backlog -> Ready -> In progress -> In review -> Done`,
-with `backlog-refine` grooming the `Backlog` into `Ready` one item at a time
-(pausing for your answers whenever an item is unclear, then running `issue-refine`
-on it), `burndown` as the batch orchestrator from `Ready` onward (one developer
-worker per issue, a separate architect reviewer per PR, then a closing
-`quality-assurance` sweep that exercises the merged work and files regressions back
-to `Backlog`), `setup` provisioning environments, and `weekly-review` reporting.
+tracked on the project board as `Backlog -> Ready -> In progress -> In review -> Done`.
 
-Core mechanics preserved from the best project variants:
+`dev-cycle` is the unit of delivery for one issue: it dispatches each phase to
+the role that owns it (architect plans, developer implements, a separate
+architect reviews and merges) and runs a bounded revision loop; it writes no
+code itself. `burndown` is `dev-cycle` in batches: triage, dependency-ordered
+waves, one cycle per issue with wave concurrency, then a closing `qa` sweep
+that files regressions back to `Backlog`. Around that spine: `backlog-refine`
+grooms `Backlog` into `Ready` in dependency-ordered waves after one up-front
+question gate; `qa` is also invocable on its own; `setup` provisions
+environments; `weekly-review` reports.
+
+Core mechanics:
 
 - **Status-as-lock**: the board Status field is an optimistic claim lock.
-- **Plan ledger**: one living `<!-- plan-ledger -->` comment per issue is the
-  shared execution checklist (UTF-8, no BOM).
+  `issue-plan` claims from `Ready`, `issue-implement` moves to `In review`,
+  `code-review` handles `Done`; coordinators never transition status.
+- **Body is the What, ledger is the How**: `issue-refine` settles scope and
+  acceptance criteria in the issue body (feasibility reading only, no design);
+  `issue-plan`, always run by an architect, designs the approach, touch points,
+  validation, risks, and tasks into one living `<!-- plan-ledger -->` comment
+  per issue (UTF-8, no BOM), asking for approval only when a real trade-off
+  needs the user. `issue-implement` executes that ledger and never creates one.
 - **Worktree isolation**: implementation and review each run in their own
   `.worktrees/` checkout, with path-safety checks before removal.
-- **Implementer =/= reviewer**: reviews always run in a fresh context; on
-  harnesses without subagents the coordinator must still use a clean context
-  for review.
-- **Converging re-review**: a `code-review` re-review only re-checks the prior
-  findings plus any regression the fix introduced, never fresh same-severity
-  nitpicks, so reviews settle instead of spawning new work each pass. `burndown`
-  adds a bound on top: at most two fix-and-re-review rounds, then the PR is parked
-  for the human and the batch moves on to the next non-blocking item, so the
-  developer and architect never loop without limit and never halt the run.
+- **Implementer =/= reviewer, reviewer = merger**: reviews always run in a
+  fresh context; `code-review` squash-merges when its criteria hold and
+  performs the after-merge steps (board `Done` when automation is off, local
+  branch cleanup). `dev-cycle` and `burndown` record the result and never
+  merge themselves.
+- **Converging re-review**: a re-review only re-checks prior findings plus
+  regressions the fix introduced; `dev-cycle` caps this at two fix-and-re-review
+  rounds, then parks the PR; `burndown` keeps the batch moving around it.
 - **One severity ladder**: Critical/High/Medium/Low everywhere; Critical or
   High blocks commits and merges.
 - **Exactly one ticket reference**: `Closes #n`/`Refs #n` as the final line of
-  a PR body.
+  a PR body, verified via `closingIssuesReferences`.
+- **Shared mechanics have one owner**: board transitions live in `issue-plan`,
+  sub-issue linking in `issue-raise`, review worktrees and merge in
+  `code-review`; other skills reference them instead of restating.
 - **Harness feedback**: recurring review findings become proposed amendments
   to AGENTS.md or the skills; the harness is designed to compound.
 
@@ -87,24 +114,29 @@ Core mechanics preserved from the best project variants:
 ```powershell
 .\sync.ps1          # install/update all three harnesses (Windows)
 .\sync.ps1 -WhatIf  # preview
+.\sync.ps1 -Check   # lint the repo (frontmatter, wrapper/skill pairing, dialect parity)
 ```
 
 ```bash
 ./sync.sh           # install/update all three harnesses (macOS/Linux)
 ./sync.sh --dry-run # preview
+./sync.sh --check   # lint the repo (frontmatter, wrapper/skill pairing, dialect parity)
 ```
 
-The script only touches items this repo manages; other skills, agents, and
-commands in the target directories are left alone.
+The script only touches items this repo manages. It writes a
+`.metaskills-manifest` into each target directory and, on the next run,
+removes anything listed there that the repo no longer ships, so renames and
+deletions clean up after themselves.
 
 ## Adopting a project
 
 1. Write (or restructure) the project's `AGENTS.md` to satisfy every section
-   of `AGENTS.template.md`.
-2. For Claude Code, add a `CLAUDE.md` containing `@AGENTS.md`.
-3. Delete the project's local copies of these skills/commands/agents so the
+   of `AGENTS.template.md`, including the harness conventions block. Put
+   stack-specific review checks in a detail file `§ Review Notes` points to.
+2. Add `.worktrees/` and `.tmp-*` to the project's `.gitignore`.
+3. For Claude Code, add a `CLAUDE.md` containing `@AGENTS.md`.
+4. Delete the project's local copies of these skills/commands/agents so the
    user-level versions apply (keep a project-level skill only where behavior
-   genuinely diverges — e.g. a project-specific `agent-login` that the
-   project's `AGENTS.md § Agent Login` points to).
-4. Models are deliberately not pinned in agent frontmatter; control model
+   genuinely diverges, e.g. a project-specific `agent-login`).
+5. Models are deliberately not pinned in agent frontmatter; control model
    choice per harness instead.
