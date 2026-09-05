@@ -30,8 +30,9 @@ These are fixed by the shared skills, not chosen per project:
 - **Worktrees** are created under `.worktrees/` at the repo root; skills stage
   multi-line GitHub bodies in `.tmp-*` files at the repo root. Both patterns
   must be in the project's `.gitignore`.
-- **Docs paths.** Skills write batch ledgers to `Docs/plans/`, status reports
-  to `Docs/status/`, and read workflow detail files from `Docs/agents/`.
+- **Docs paths.** `weekly-review` writes to `Docs/status/`; skills read
+  workflow detail files from `Docs/agents/`. No skill writes batch state
+  into the project; the board and issue comments carry it.
 - **Board Status is the claim lock.** Moving an item out of the ready status
   into the in-progress status is the claim; skills only claim from ready.
 

@@ -17,7 +17,7 @@ A GitHub issue number or URL; the ledger, claim, and `Closes #n` trail all hang 
 
 | Phase | Role | Skill | Skipped when |
 |---|---|---|---|
-| 1. Plan | `architect` | `issue-plan` | a ledger exists and the issue is in-progress |
+| 1. Plan | `architect` | `issue-plan` | the user explicitly asked to resume an already-planned issue |
 | 2. Implement | `developer` | `issue-implement` | never |
 | 3. Review + merge | `architect`, distinct from phase 2 | `code-review` (PR mode) | never |
 | 4. Revise | `developer`, then a fresh `architect` | `issue-implement` § Revision Round, `code-review` § Re-review | the review was clean |
@@ -37,8 +37,8 @@ Revise:  Run issue-implement § Revision Round on PR <number> (issue <n>). Findi
 
 ## Flow
 
-1. Load the issue (`gh issue view <n> --json number,title,body,state,url,comments`), board status, and whether a ledger exists (first comment line `<!-- plan-ledger -->`). Backlog/unrefined: route through `issue-refine`. In review / done: stop and report.
-2. **Plan** if no ledger. Decision points returned instead of a ledger: surface them to the user (or return them to the batch coordinator) and stop; never answer design questions on the architect's behalf. Confirm the ledger exists and the status is in-progress.
+1. Load the issue (`gh issue view <n> --json number,title,body,state,url,comments`), board status, and whether a ledger exists (first comment line `<!-- plan-ledger -->`). Backlog/unrefined: route through `issue-refine`. In progress, in review, or done: stop and report `claimed`; the board cannot distinguish a crashed run from a live one, so resume only on an explicit user instruction, never when dispatched from a batch.
+2. **Plan** (skipped only on explicit resume). Architect returns `claimed`: stop and report it. Decision points returned instead of a ledger: surface them to the user (or return them to the batch coordinator) and stop; never answer design questions on the architect's behalf. Confirm the ledger exists and the status is in-progress.
 3. **Implement.** Accept only a PR URL, a registered closing reference, validation output, and the in-review transition. A blocked result (`## Blockers` filled) sends the plan back to the architect once; if it recurs, stop and report.
 4. **Review**, round 1. Merged: record and finish. Clean but a merge criterion unmet: report why and leave it. Critical/High: revise.
 5. **Revise**, at most two rounds (review rounds 2 and 3). Developer fixes only the enumerated findings; a fresh architect re-reviews pointed at the prior comment. A contested finding ends the loop immediately (human call). Cap or contest: park the PR with round, exit reason, and both positions.

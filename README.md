@@ -85,7 +85,12 @@ Core mechanics:
 
 - **Status-as-lock**: the board Status field is an optimistic claim lock.
   `issue-plan` claims from `Ready`, `issue-implement` moves to `In review`,
-  `code-review` handles `Done`; coordinators never transition status.
+  `code-review` handles `Done`; coordinators never transition status. Two
+  simultaneous claimants are told apart by the ledger comment (lowest id
+  wins, the other deletes its own and yields), and an issue already in
+  progress is never silently resumed, so two burndowns on the same scope
+  degrade to skipped issues, not duplicate PRs. No skill writes batch
+  state into the project; the board and issue comments are the only state.
 - **Body is the What, ledger is the How**: `issue-refine` settles scope and
   acceptance criteria in the issue body (feasibility reading only, no design);
   `issue-plan`, always run by an architect, designs the approach, touch points,

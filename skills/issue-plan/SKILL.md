@@ -39,7 +39,9 @@ After every transition re-run the item-list lookup and report the verified statu
 
 ## Claim (status as lock)
 
-Moving ready → in-progress is the claim; claim only from ready. Backlog: not refined, route through `issue-refine`. In progress / in review / done without a ledger: someone else's or finished; stop. In progress with a ledger: a prior plan run; update it, no new claim. Transition, then re-read; if the status changed under you, yield and report.
+Moving ready → in-progress is the claim; claim only from ready. Backlog: not refined, route through `issue-refine`. In progress / in review / done: someone else's or finished; stop and report `claimed` (a ledger without a PR may be a crashed run, but only the user can say so: re-plan or update an existing ledger only when explicitly asked to resume). Transition, then re-read; if the status changed under you, yield.
+
+The board cannot tell two simultaneous claimants apart, so the ledger comment is the tie-break: after posting, re-fetch the comments; if another `<!-- plan-ledger -->` comment has a lower id than yours, delete yours (`gh api -X DELETE /repos/<owner>/<repo>/issues/comments/<your-comment-id>`) and report `claimed`, leaving the status alone.
 
 ## Workflow
 
@@ -54,7 +56,7 @@ Moving ready → in-progress is the claim; claim only from ready. Backlog: not r
 4. Design: enumerate viable approaches, choose the smallest that satisfies the acceptance criteria, note in one line each why the others lose. Spell out interface, contract, data, and configuration changes; compatibility and migration needs; the validation strategy; risks and their containment.
 5. Decompose into the smallest individually implementable and verifiable tasks, dependency-ordered, each with a code area and a validation signal; note parallelizable ones.
 6. Apply the Approval Gate; if it triggers, present and stop.
-7. Claim (skip if a ledger exists or there is no board).
+7. Claim (skip if there is no board, or the user asked to resume an existing ledger).
 8. Write the ledger to `.tmp-plan-<number>.md` with a file-write tool (not shell redirection):
 
    ```md
@@ -93,11 +95,11 @@ Moving ready → in-progress is the claim; claim only from ready. Backlog: not r
    gh issue comment <number> --body-file .tmp-plan-<number>.md
    ```
 
-   Existing ledger: edit in place, never a second comment.
+   Then the tie-break in § Claim. Resuming an existing ledger (explicit user request only): edit in place, never a second comment.
 
    ```sh
    gh issue view <number> --json comments --jq '.comments[] | select(.body | startswith("<!-- plan-ledger -->")) | .id'
    gh api -X PATCH /repos/<owner>/<repo>/issues/comments/<comment-id> -F body=@.tmp-plan-<number>.md
    ```
 
-10. Report: issue and plan comment links, approach in one line with rejected alternatives, task count, sequence, risks, blockers. Not claimed: say why and that nothing was posted.
+10. Report: issue and plan comment links, approach in one line with rejected alternatives, task count, sequence, risks, blockers. Not claimed: `claimed` or the reason, and that nothing was posted.
