@@ -13,7 +13,7 @@ This skill contains no project facts. Resolve every project-specific value from 
 - The base/integration branch for worktrees and PRs: **§ Branch Map**.
 - Build, test, lint commands and the DB tripwire file list: **§ Build & Validation**.
 - Project-specific review guidance: **§ Review Notes** (owned by `code-review`; do not re-list it here).
-- QA target environment and login for the closing QA sweep: **§ Environments** and **§ Agent Login** (owned by `quality-assurance`/`agent-login`). These are needed only for Phase 5; if the project has no running app to test, that phase is skipped with a note rather than stopped.
+- QA target environment and login for the closing QA sweep: **§ Environments** and **§ Agent Login** (owned by the `quality-assurance` agent and each project's `AGENTS.md § Agent Login`). These are needed only for Phase 5; if the project has no running app to test, that phase is skipped with a note rather than stopped.
 
 If any required section is missing from `AGENTS.md`, say so and stop. Do not guess.
 
@@ -297,7 +297,7 @@ Resolve the QA target and auth from `AGENTS.md` § Environments and § Agent Log
 
 3. Run QA in a fresh agent.
    - Spawn the `quality-assurance` agent (fresh context; not the implementer or reviewer of any issue in the batch). Give it the scoped flow list, the merged issue/PR references, and the target environment.
-   - It loads `agent-login`, drives the app through the Playwright MCP, reproduces before filing, and files only deterministically reproducible bugs. That workflow is owned by the `quality-assurance` agent; do not re-specify it here.
+    - It follows `AGENTS.md § Environments` and `§ Agent Login` for the target and auth, drives the app through the Playwright MCP, reproduces before filing, and files only deterministically reproducible bugs. That workflow is owned by the `quality-assurance` agent; do not re-specify it here.
 
 4. File and link bugs.
    - New bugs are filed as GitHub issues at the board's backlog status (per the `quality-assurance` workflow), using the repo issue template and Issue Type `Bug`.

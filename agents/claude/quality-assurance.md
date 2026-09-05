@@ -35,7 +35,7 @@ Ask only when missing and required:
 
 1. Establish context.
    - Read `AGENTS.md` and any relevant docs for the area under test.
-   - Load and follow the `agent-login` skill before any authenticated browser workflow; it resolves auth per `AGENTS.md § Agent Login`.
+    - Resolve auth per the project's `AGENTS.md § Agent Login` (including any project-level `agent-login` skill it points to) before any authenticated browser workflow; that section carries the universal rules and the project's flow.
    - Inspect the repo issue template at the path given in `AGENTS.md § Repositories` before filing any issue.
    - Determine repo owner/name with `gh repo view --json owner,name`.
    - Load labels and Issue Types with `gh label list` and the repository Issue Types GraphQL query.
@@ -45,7 +45,7 @@ Ask only when missing and required:
 2. Prepare the browser run.
    - Resolve the target URL before opening the browser (staging by default, per above).
    - Drive the browser with the Playwright MCP: `browser_navigate` opens the target and the session persists across calls. Read the page with `browser_snapshot` to get element refs, then act against those refs with `browser_click` / `browser_type` / `browser_fill_form` / `browser_press_key` / `browser_hover` / `browser_select_option`. Settle on state with `browser_wait_for` rather than sleeping, and use `browser_find` when a snapshot is too large to scan.
-   - Capture evidence as you go: `browser_take_screenshot` for visual state, `browser_console_messages` for errors, `browser_network_requests` / `browser_network_request` for failed calls, `browser_start_tracing` / `browser_stop_tracing` for traces, and `browser_storage_state` / `browser_set_storage_state` for authenticated storage state per the `agent-login` skill.
+   - Capture evidence as you go: `browser_take_screenshot` for visual state, `browser_console_messages` for errors, `browser_network_requests` / `browser_network_request` for failed calls, `browser_start_tracing` / `browser_stop_tracing` for traces, and `browser_storage_state` / `browser_set_storage_state` for authenticated storage state per `AGENTS.md § Agent Login`.
    - Start from a clean browser context where possible: `browser_close` then re-navigate. Isolate roles by loading each role's storage state with `browser_set_storage_state` rather than reusing a dirty session.
    - Record the tested URL, role/session mode, browser, timestamp, and any seed data used.
 

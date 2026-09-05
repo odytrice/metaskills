@@ -66,6 +66,11 @@ Remove-LegacyPath (Join-Path $targets.OpencodeSkills 'plan')
 Remove-LegacyPath (Join-Path $targets.CodexSkills 'plan')
 Remove-LegacyPath (Join-Path $targets.OpencodeCommand 'plan.md')
 Remove-LegacyPath (Join-Path $targets.CodexPrompts 'plan.md')
+# agent-login was removed from the shared harness; auth now lives in
+# each project's AGENTS.md (AGENTS.template.md § Agent Login).
+Remove-LegacyPath (Join-Path $targets.ClaudeSkills 'agent-login')
+Remove-LegacyPath (Join-Path $targets.OpencodeSkills 'agent-login')
+Remove-LegacyPath (Join-Path $targets.CodexSkills 'agent-login')
 
 # --- Skills: identical SKILL.md trees for all three harnesses ---------------
 $skills = Get-ChildItem (Join-Path $repo 'skills') -Directory

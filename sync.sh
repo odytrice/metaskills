@@ -80,6 +80,11 @@ remove_legacy_path "$opencode_skills/plan"
 remove_legacy_path "$codex_skills/plan"
 remove_legacy_path "$opencode_command/plan.md"
 remove_legacy_path "$codex_prompts/plan.md"
+# agent-login was removed from the shared harness; auth now lives in
+# each project's AGENTS.md (AGENTS.template.md § Agent Login).
+remove_legacy_path "$claude_skills/agent-login"
+remove_legacy_path "$opencode_skills/agent-login"
+remove_legacy_path "$codex_skills/agent-login"
 
 # --- Skills: identical SKILL.md trees for all three harnesses ---------------
 skill_names=()

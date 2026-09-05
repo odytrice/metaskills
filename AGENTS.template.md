@@ -67,11 +67,39 @@ source of truth for base branches in dev-cycle/code-review.
 
 ## Agent Login
 
-How a browser/QA agent authenticates against a running instance: URLs, auth
-mechanism, test credentials or seeding procedure, storage-state locations,
-MFA/OTP handling in non-prod, and what must never be captured in issues or
-logs. Projects with complex flows may keep a project-level `agent-login`
-skill instead and point to it from here.
+How a browser/QA agent authenticates against a running instance. This section
+is the contract every consuming project keeps; the shared harness no longer
+ships a generic `agent-login` skill, so this section is the floor.
+
+**Project-specific (fill in):** target URLs, auth mechanism, test credentials
+or seeding procedure, storage-state locations, MFA/OTP handling in non-prod,
+and what must never be captured in issues or logs. Projects with complex flows
+may keep a project-level `agent-login` skill and point to it from here; when
+that skill exists it is authoritative.
+
+**Universal rules (required floor; applies even when a project-level `agent-login`
+skill exists):**
+
+- Target the project's staging/dev environment by default. Never use
+  production for QA logins unless the user explicitly instructs it.
+- Prefer non-interactive session establishment in this order: saved Playwright
+  storage-state files produced by the project's e2e harness, the project's
+  e2e setup seeding accounts, mock/service-agent auth where this section
+  documents it and the user has confirmed it is configured, manual UI login
+  last.
+- Verify login success by an authenticated layout element or route this
+  section names; absence of an error is not success.
+- Never capture or paste JWTs, refresh tokens, session cookies, OTPs,
+  passwords, client secrets, API keys, raw auth headers, or PII into GitHub
+  issues, PR comments, chat summaries, logs, or screenshots. Redact
+  screenshots that show tokens or personal data.
+- Seeded e2e credentials belong to throwaway e2e databases and must not be
+  assumed to exist in any other environment.
+- When host/cookie sensitivity matters, prefer `127.0.0.1` over `localhost`
+  in host-side config.
+- If a required field above is not documented and credentials are not
+  available from the user, stop and report that this project has no
+  agent-login guidance; do not invent credentials, URLs, or flows.
 
 ## Review Notes
 

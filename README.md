@@ -26,7 +26,8 @@ skills say so and stop rather than guess.
 
 **Precedence:** all three harnesses resolve project-level config over
 user-level, so a project can still override any skill locally by shipping its
-own copy (e.g. a project-specific `agent-login`).
+own copy (e.g. a project-specific `agent-login` that the project's
+`AGENTS.md § Agent Login` points to).
 
 ## Layout
 
@@ -103,6 +104,7 @@ commands in the target directories are left alone.
 2. For Claude Code, add a `CLAUDE.md` containing `@AGENTS.md`.
 3. Delete the project's local copies of these skills/commands/agents so the
    user-level versions apply (keep a project-level skill only where behavior
-   genuinely diverges, e.g. a rich `agent-login`).
+   genuinely diverges — e.g. a project-specific `agent-login` that the
+   project's `AGENTS.md § Agent Login` points to).
 4. Models are deliberately not pinned in agent frontmatter; control model
    choice per harness instead.
