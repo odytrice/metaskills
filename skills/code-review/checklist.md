@@ -1,70 +1,70 @@
 # Code Review Checklist
 
-Stack-neutral; apply only the sections relevant to the changed areas. `AGENTS.md` § Code Layout & Tech Stack and § Review Notes (and its detail file) carry the stack's idioms and override this list on conflict.
+Apply relevant sections only. Stack idioms in `AGENTS.md` § Code Layout & Tech Stack and § Review Notes/detail file override conflicts.
 
 ## Scope and trajectory
 
-- Diff matches the linked issue and plan ledger; no silent expansion of files, endpoints, or behavior.
-- Reaches the risky last 20% (edge cases, error paths, integration points), not only the happy path.
-- Any business-logic assumption guessed instead of asked is called out.
+- Matches linked issue/ledger; no silent file/endpoint/behavior expansion.
+- Covers edge cases, error paths, integration points, not just happy paths.
+- Flags guessed business-logic assumptions.
 
 ## Security and access control
 
-- Protected routes/actions authenticate; authorization is scoped to the requesting user/tenant; no cross-tenant reads or writes.
+- Protected routes/actions authenticate and authorize requesting user/tenant; no cross-tenant reads/writes.
 - Dev-only shortcuts (mock auth, seeded credentials, debug endpoints) cannot activate outside local development.
-- No secrets in source, client code, or logs; local secret files stay gitignored.
-- Input validated before storage or rendering; queries parameterized; user HTML never rendered raw; CSRF/CORS not disabled.
-- No `localhost`/developer-machine assumptions in host-side or production config.
+- No source/client/log secrets; local secret files gitignored.
+- Validate input before storage/rendering; parameterize queries; no raw user HTML or disabled CSRF/CORS.
+- No `localhost`/developer-machine assumptions in host-side/production config.
 
 ## Data integrity and migrations
 
-- Migrations follow the project convention and are backward-compatible; destructive changes have an explicit path and are called out in the PR.
-- Multi-step writes are transactional where partial failure corrupts state.
-- IDs, timestamps, enums follow the project scheme; no ad-hoc types for concepts the domain already defines.
-- A touched DB tripwire file (§ Build & Validation) means the live-database suite ran and passed.
+- Backward-compatible migrations follow project convention; destructive changes have explicit path and PR disclosure.
+- Transactional multi-step writes where partial failure corrupts state.
+- IDs/timestamps/enums follow project scheme; reuse defined domain types.
+- Touched DB tripwire (§ Build & Validation): live-database suite passed.
 
 ## Architecture and boundaries
 
-- Business logic in the designated layer, not in handlers, UI, jobs, or data access; layers depend inward.
-- Handlers thin: validate, authorize, delegate, map. Boundary types carry no business logic.
-- Cross-language contract mirrors updated on both sides.
-- New files registered where the project requires explicit build order or module registration.
+- Business logic in designated layer, not handlers/UI/jobs/data access; inward dependencies.
+- Thin handlers: validate, authorize, delegate, map. No boundary-type business logic.
+- Update both cross-language contract mirrors.
+- Register new files for required build order/modules.
 
 ## Error handling
 
-- Errors propagate via the project mechanism; none swallowed silently.
-- Validation errors distinguishable from system errors and mapped to the intended status/message.
-- User-facing errors leak no internals (stack traces, SQL, paths).
+- Propagate errors via project mechanism; never silently swallow.
+- Distinguish validation/system errors; map intended status/message.
+- No user-facing internal leaks (stack traces, SQL, paths).
 
 ## Background processing
 
-- Workers/jobs/consumers are thin orchestrators over the same core logic as the synchronous path.
-- Failures retried, dead-lettered, or logged deliberately; nothing crashes the loop silently.
+- Thin workers/jobs/consumers reuse synchronous core logic.
+- Deliberate retries/dead-lettering/logging; no silent loop crashes.
 - No blocking calls in async/event-loop contexts.
 
 ## Frontend
 
-- Follows the project's component, routing, and state patterns; no parallel state model.
-- Browser-only APIs guarded where server rendering applies.
-- Nullable API data handled explicitly; loading and error states on every primary path.
-- API calls through the designated client layer.
-- Interactive elements keyboard-reachable and labelled; images have alt text; controls match implemented behavior (no inert buttons or placeholders).
-- Uploads validated (type, size) before sending.
+- Project component/routing/state patterns; no parallel state model.
+- Guard browser-only APIs during server rendering.
+- Explicit nullable API handling; loading/error states on every primary path.
+- Designated client layer for API calls.
+- Keyboard-reachable, labelled interactions; image alt text; controls implement advertised behavior, no inert buttons/placeholders.
+- Validate upload type/size before sending.
 
 ## Testing
 
-- New or changed behavior has tests where § Code Layout & Tech Stack names, exercising the risky path rather than asserting trivially.
-- Unit tests isolate dependencies; integration tests use real infrastructure.
-- Test names describe behavior in the surrounding suite's style.
+- Test new/changed behavior in § Code Layout & Tech Stack locations; exercise risky paths, not trivial assertions.
+- Isolated unit dependencies; real integration infrastructure.
+- Behavioral test names match surrounding suite style.
 
 ## Configuration and operations
 
-- Config changes environment-appropriate; production-only settings not altered incidentally.
-- Touched CI workflows, Dockerfiles, and manifests inspected: image tags, secrets handling, resource limits.
-- Structured logging at appropriate levels; metrics/tracing not broken.
+- Environment-appropriate config; no incidental production-only changes.
+- Inspect touched CI/Dockerfiles/manifests: image tags, secrets handling, resource limits.
+- Appropriate structured log levels; preserve metrics/tracing.
 
 ## Style (only where it hides risk)
 
-- Formatting per the project's formatter config; do not hand-enforce rules it does not set.
-- No dead code, unused imports, or commented-out blocks that obscure intent.
-- Misleading naming is at most a Low finding.
+- Follow formatter config, never invent manual rules.
+- No intent-obscuring dead code, unused imports, commented-out blocks.
+- Misleading naming: at most Low.

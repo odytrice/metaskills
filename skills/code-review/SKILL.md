@@ -1,74 +1,75 @@
 ---
 name: code-review
-description: Review a PR/branch (separate agent and worktree; posts a comment; squash-merges when criteria hold) or the local uncommitted diff (pre-commit gate; Critical/High blocks). Use when asked to review a PR, branch, diff, or current changes.
+description: Review PRs for merge or local changes for commit readiness. Use when asked to review a PR, branch, diff, or current changes.
 ---
 
 # Code Review
 
-Project facts from `AGENTS.md`: **§ Branch Map** (base branches; whether merging auto-deploys), **§ Build & Validation** (commands, DB tripwire files, commit convention), **§ Code Layout & Tech Stack**, **§ Review Notes** (project checks and any detail file), **§ Project Board** (done automation). Missing section: name it and stop.
+Select mode first. Both require `AGENTS.md` **§ Build & Validation** (commands, DB tripwires, commit convention), **§ Code Layout & Tech Stack**, **§ Review Notes** (checks/detail file). PR additionally requires **§ Repositories**, **§ Branch Map** (bases, auto-deploy), **§ Project Board** (done automation). Missing required section: name it and stop.
 
-Checks are `checklist.md` (stack-neutral, this directory) plus § Review Notes; output structure and severity ladder are `output-format.md`. Lead with findings; style only where it hides risk.
+Use this directory's `checklist.md` plus § Review Notes; `output-format.md` defines output/severity. Findings first; style only where it hides risk.
+
+PR: explicit `board: none` skips board operations per `issue-plan` § Board Status Transitions; missing facts stop. Local: no board config/operations. Standalone partial PRs are allowed; transition only issues this PR actually closes, never mere references.
 
 ## Modes
 
-- **PR mode** (given a PR number, URL, or branch): separate agent and review worktree; post the review as a PR comment; squash-merge when the criteria below hold.
-- **Local mode** (uncommitted working-tree changes, or a pre-commit gate): review in place, report to the user; any Critical or High finding blocks the commit.
+- **PR mode** (PR number/URL/branch): independent agent/worktree, PR comment, conditional squash-merge.
+- **Local mode** (no target, uncommitted changes, pre-commit gate): in-place review, user report; any Critical/High blocks commit.
 
 ## PR Mode
 
-The reviewer is a different agent from the implementer. If the current agent authored or substantially edited the change, stop and spawn a separate review agent with only the PR number/URL, linked issue, and validation expectations; it does not reuse the implementation worktree or context. The reviewer merges; the caller (user, `dev-cycle`, or `burndown`) records the result and never merges on its behalf.
+Reviewer must differ from implementer. If you authored/substantially edited the change, stop and spawn a reviewer with only PR number/URL, linked issue, validation expectations; never reuse implementation context/worktree. Reviewer alone merges; caller (user, `dev-cycle`, `burndown`) only records results.
 
 ### Review Worktree
 
-`<base>` is the PR's `baseRefName`, cross-checked against § Branch Map:
+Capture `<reviewed-sha>` = `headRefOid`, `<base-sha>` = `baseRefOid`, `<base>` = `baseRefName`; cross-check base against § Branch Map. Verify `origin` matches § Repositories' PR base repo; scope number-based `gh` commands there. Fetch PR head ref (also for forks); require captured SHA match before detached checkout:
 
 ```sh
 git fetch origin <base>
-git worktree add .worktrees/review-pr-<number> origin/<base>
-cd .worktrees/review-pr-<number>
-gh pr checkout <number>
+git fetch origin refs/pull/<number>/head
+git rev-parse FETCH_HEAD
+git worktree add --detach .worktrees/review-pr-<number> <reviewed-sha>
 ```
 
-All reads, diffs, and validation run here. After the comment (and any merge), from the original repo:
+Require worktree `git rev-parse HEAD` = `<reviewed-sha>` and both captured commits available. All reads/diffs/validation run here using `git diff <base-sha>...<reviewed-sha>`, never moving `gh pr diff`. Fetch/head mismatch: fresh metadata and review, never substitute newer SHA. After comment/any merge, from original repo:
 
 ```sh
 git worktree remove .worktrees/review-pr-<number>
 git worktree prune
 ```
 
-Before removing, verify the resolved path is inside the repo's `.worktrees/` and the worktree is clean; otherwise stop and report.
+Remove only a clean worktree whose resolved path is inside the repo's `.worktrees/`; otherwise stop/report.
 
 ### Process
 
-1. Context: `gh pr view <number> --json title,body,files,commits,baseRefName,headRefName,headRefOid,url`, `gh pr diff <number>`, `gh issue view` for linked issues (the plan ledger is the intended design; judge the diff against it).
-2. Read the changed files and enough surrounding context, navigating by § Code Layout & Tech Stack.
-3. Apply the relevant `checklist.md` sections plus § Review Notes.
-4. Validate where practical with § Build & Validation for the layers touched. A touched DB tripwire file means the live-database suite must have run and passed (CI or locally) before approval.
-5. Post the comment per `output-format.md`, headed `**Review complete** -- [View PR](<pr-url>)` (a `View job` link instead when a job URL exists).
+1. `gh pr view <number> --json title,body,baseRefName,baseRefOid,headRefName,headRefOid,url,closingIssuesReferences`; capture SHAs before checkout. Read pinned-range paths/commits, linked issues, and paginated REST ledger comments per `issue-plan`; ledger = intended design.
+2. Read changed files and surrounding context via § Code Layout & Tech Stack; apply relevant checklist/Review Notes.
+3. Validate touched layers where practical per § Build & Validation. Touched DB tripwire: live-database suite must pass locally or in CI before approval.
+4. Post per `output-format.md`, header `**Review complete** -- [View PR](<pr-url>)` (use `View job` if job URL exists), naming reviewed head/base SHAs. Re-fetch metadata; changed head requires fresh pinned checkout, validation, re-review before approval/merge. Never transfer approval to a new SHA.
 
 ### Re-review (revision passes)
 
-When the PR already carries a `**Review complete**` comment from this skill, converge:
+Existing `**Review complete**` comment: converge.
 
-- Judge each prior finding **Resolved**, **Partially resolved**, or **Not resolved**, pointing to the commit or hunk.
-- New findings only for a regression the fix introduced, or a Critical/High that genuinely threatens release and was not surfacable earlier. No fresh Medium/Low that was equally reviewable before.
-- Open with a short **Prior findings** recap; list only still-open findings and new regressions; mark the header as a re-review.
-- `dev-cycle` owns the round bound (two revision rounds, then park).
+- Classify each prior finding **Resolved**, **Partially resolved**, or **Not resolved**, citing commit/hunk.
+- New findings only: fix-induced regressions or release-threatening Critical/High not surfacable earlier. No previously reviewable new Medium/Low.
+- Open with **Prior findings** recap; list only open findings/new regressions; label header re-review.
+- `dev-cycle` bounds revisions: two, then park.
 
 ### Squash Merge (the reviewer merges)
 
-Merge when all hold: assessment `Approve`, no Critical/High, no important Medium that should land first; required checks passed and the PR is mergeable; validation revealed nothing production-breaking; the user did not ask for review only; § Branch Map does not say merging triggers a deploy the user wants to time manually.
+Merge only if `Approve`, no Critical/High or important pre-merge Medium, required checks passed, PR mergeable, no production-breaking validation, no review-only request, and no § Branch Map auto-deploy the user wants to time manually.
 
 ```sh
-gh pr merge <number> --squash --delete-branch
+gh pr merge <number> --repo <repo-slug> --squash --match-head-commit <reviewed-sha>
 ```
 
-Subject: the PR's commit subject if it follows the § Build & Validation convention, otherwise one you write to it. Any criterion unmet: leave the PR open and report which.
+Immediately before merge re-fetch head/base and reviewed-head required checks. Changed head/base or head-match rejection: refresh pinned review/validation, never just retry a newer SHA. Use PR commit subject if it meets § Build & Validation convention; otherwise write one that does. Unmet criterion: leave open and report it.
 
 ### After A Merge
 
-1. **Board.** If § Project Board says done automation is off, move the item to done per `issue-plan` § Board Status Transitions; otherwise leave it to `Closes #n`. If this was the parent's last open sub-issue, note the parent is closeable (do not close it).
-2. **Local branch.** `gh pr checkout` left a local head branch. From the original repo, once `gh pr view <number> --json state,mergedAt,headRefOid` confirms the merge and the local tip matches `headRefOid`: `git branch -D <headRefName>`. Otherwise leave it and say why.
+1. **Board.** `board: none`: skip/report. Otherwise verify registered closing issues are closed. Automation off: move only closed issues to done per `issue-plan` § Board Status Transitions. Automation on: verify with the same complete lookup; report pending/failure honestly. Last open sub-issue: note parent closeable, never close it.
+2. **Branches.** Detached checkout creates no local head branch. Preserve pre-existing user/implementation branches; never use `--delete-branch`. Remote cleanup belongs to repository automation or a separate explicit request.
 
 Report: comment URL, assessment, merge commit or blocking criterion, board transition, worktree and branch cleanup.
 
@@ -76,8 +77,7 @@ Report: comment URL, assessment, merge commit or blocking criterion, board trans
 
 No worktree or separate agent.
 
-1. `git diff --name-only` and `git diff --cached --name-only` (or the caller's paths). Nothing changed: say so and stop.
-2. Map files to § Code Layout & Tech Stack areas; apply the relevant `checklist.md` sections plus § Review Notes.
-3. Read the diffs and enough surrounding content.
-4. Validate where practical; a touched DB tripwire file means the live-database suite runs before commit.
-5. Report to the user per `output-format.md`. Any Critical or High blocks the commit: say so in the Summary ("Commit blocked: <n> Critical/High") and list what must be fixed. Re-review after fixes with the same convergence discipline.
+1. `git diff --name-only` and `git diff --cached --name-only` (or caller's paths). No changes: report/stop.
+2. Map files via § Code Layout & Tech Stack; read diffs/surroundings and apply relevant checklist/Review Notes.
+3. Validate where practical; touched DB tripwire requires live-database suite before commit.
+4. Report per `output-format.md`. Any Critical/High blocks commit: Summary says "Commit blocked: <n> Critical/High" and lists required fixes. Re-review with the same convergence discipline.

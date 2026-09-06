@@ -28,6 +28,11 @@ PowerShell.
 permission envelope, and what to return; nothing from the skill is restated.
 The three dialect bodies are byte-identical; `sync.sh --check` verifies it.
 
+Permission envelopes are not identical: OpenCode uses per-tool/path rules,
+Claude exposes tool allowlists, and Codex uses sandbox and approval settings.
+Matching prose does not prove capability parity; validate effective permissions
+in each harness before relying on a role boundary.
+
 **Token budget.** Skill descriptions are loaded into every session, so they
 say only what the skill does and when to trigger it. Rules live in exactly
 one skill and are referenced from others. Login rules that apply to every
@@ -53,6 +58,7 @@ agents/
 AGENTS.template.md   the per-project AGENTS.md contract
 sync.ps1       installs everything into ~/.claude, ~/.config/opencode, ~/.codex
 sync.sh        same installer for macOS/Linux
+tests/         isolated installer tests and manual workflow scenarios
 .opencode/skills/    repo-local maintenance skills (not installed)
 ```
 
@@ -63,7 +69,7 @@ issue-raise -> issue-refine -> [ dev-cycle ............................... ]
    (create,     (the What:      issue-plan  -> issue-implement -> code-review
     Backlog)     -> Ready)      architect      developer          architect
                                 the How,       worktree,          review,
-                                                                 claim, ledger  ledger, PR         merge, Done
+                                 claim, ledger  ledger, PR         merge, Done
 ```
 
 Progress is tracked on the project board as
@@ -92,6 +98,10 @@ Core mechanics:
   progress is never silently resumed, so two burndowns on the same scope
   degrade to skipped issues, not duplicate PRs. No skill writes batch
   state into the project; the board and issue comments are the only state.
+- **Boardless delivery**: explicit `board: none` skips board operations; missing
+  configuration does not. The ledger remains the ownership signal and an
+  existing ledger still requires explicit resume. One same-cycle blocked-plan
+  repair is allowed with ownership evidence, not as a general takeover path.
 - **Body is the What, ledger is the How**: `issue-refine` settles scope and
   acceptance criteria in the issue body (feasibility reading only, no design);
   `issue-plan`, always run by an architect, designs the approach, touch points,
@@ -102,16 +112,19 @@ Core mechanics:
   `.worktrees/` checkout, with path-safety checks before removal.
 - **Implementer =/= reviewer, reviewer = merger**: reviews always run in a
   fresh context; `code-review` squash-merges when its criteria hold and
-  performs the after-merge steps (board `Done` when automation is off, local
-  branch cleanup). `dev-cycle` and `burndown` record the result and never
-  merge themselves.
+  performs the after-merge steps (board `Done` for closed issues when automation
+  is off, detached review-worktree cleanup). Existing local branches are left
+  alone. Review and merge are pinned to the reviewed head SHA; changed heads
+  require re-review. `dev-cycle` and `burndown` never merge themselves.
 - **Converging re-review**: a re-review only re-checks prior findings plus
   regressions the fix introduced; `dev-cycle` caps this at two fix-and-re-review
   rounds, then parks the PR; `burndown` keeps the batch moving around it.
 - **One severity ladder**: Critical/High/Medium/Low everywhere; Critical or
   High blocks commits and merges.
-- **Exactly one ticket reference**: `Closes #n`/`Refs #n` as the final line of
-  a PR body, verified via `closingIssuesReferences`.
+- **Fully resolving delivery**: `issue-implement` and `dev-cycle` require
+  `Closes #n` as the final PR-body line and exactly the intended issue URL in
+  `closingIssuesReferences`. Partial work stops for repair or an approved split.
+  Standalone review can handle partial PRs without marking referenced issues done.
 - **Shared mechanics have one owner**: board transitions live in `issue-plan`,
   sub-issue linking in `issue-raise`, review worktrees and merge in
   `code-review`; other skills reference them instead of restating.
@@ -136,6 +149,25 @@ The script only touches items this repo manages. It writes a
 `.metaskills-manifest` into each target directory and, on the next run,
 removes anything listed there that the repo no longer ships, so renames and
 deletions clean up after themselves.
+
+Both installers lint sources and preflight every destination before changing
+anything. Unsafe manifest names, linked paths, and unmanaged same-name collisions
+stop the run, including previews. Unmanifested legacy files are no longer deleted.
+For an unmanaged collision, inspect and back up or relocate the conflicting item
+before retrying; the installer does not silently adopt or overwrite it. Run only
+one installer at a time: preflight is not a filesystem lock or rollback mechanism.
+
+## Validation
+
+Run `python3 tests/test_installers.py` (or `python tests/test_installers.py` on
+Windows). The standard-library suite uses temporary repositories and isolated
+home directories, never live agent configuration. It exercises each available
+installer; unavailable Bash or PowerShell runtimes are reported as skips.
+Release validation should exercise both, not treat skipped coverage as passing.
+
+`tests/workflow-scenarios.md` contains manual instruction walkthroughs for
+ownership, recovery, GitHub identity, and merge races. These are evaluation
+fixtures, not automated proof of agent behavior or live GitHub integration.
 
 ## Adopting a project
 

@@ -1,6 +1,6 @@
 # Review Output Format
 
-PR mode posts this as the PR comment (under the `**Review complete**` header line); local mode prints it. Omit empty sections and severity groups; Overall Assessment and Summary are always present.
+PR: post under `**Review complete**`; local: print. Omit empty sections/severity groups except required Overall Assessment and Summary.
 
 ```md
 ### Code Review
@@ -32,11 +32,11 @@ PR mode posts this as the PR comment (under the `**Review complete**` header lin
 
 ### Harness Feedback
 
-- Only when a finding recurs or reveals a missing durable guardrail: the `AGENTS.md` rule (usually § Review Notes) or `checklist.md` line that would have caught it.
+- Recurring finding/missing durable guardrail only: propose an `AGENTS.md` rule (usually § Review Notes) or `checklist.md` line to catch it.
 
 ### Summary
 
-One paragraph: scope, behavioral impact, next steps with the most important first. Local mode: state whether the commit is blocked.
+One paragraph: scope, behavioral impact, priority-ordered next steps. Local: state whether commit is blocked.
 ```
 
 ## Assessment
@@ -52,4 +52,4 @@ One paragraph: scope, behavioral impact, next steps with the most important firs
 - **Medium**: important edge case, missing test for risky behavior, degraded UX on a primary path.
 - **Low**: maintainability or minor correctness with limited blast radius.
 
-Every finding carries `path:line`; group by severity, not file. No actionable findings: write `No critical issues found.` under Findings. Never fabricate elapsed time, actor handles, or job URLs.
+Every finding needs `path:line`; group by severity, not file. No actionable findings: `No critical issues found.` under Findings. Never fabricate elapsed time, actor handles, or job URLs.

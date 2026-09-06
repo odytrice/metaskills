@@ -1,25 +1,27 @@
 ---
 name: issue-raise
-description: Create a GitHub issue with the repo template, Issue Type, existing labels, assignee, and board placement; link it as a native sub-issue when it is part of a parent's breakdown. Use when asked to raise, file, open, create, or log an issue, bug, task, or follow-up.
+description: Create correctly classified, assigned GitHub issues and native sub-issues. Use to raise, file, open, create, or log an issue, bug, task, or follow-up.
 ---
 
 # Raise Issue
 
 Project facts from `AGENTS.md`: **§ Repositories** (repo slug, issue template path), **§ Project Board** (owner, project number, new-issue status). Missing section: name it and stop.
 
+Explicit `board: none` is valid per `issue-plan` § Board Status Transitions: skip board operations and report it. Missing board facts still stop.
+
 ## Workflow
 
-1. Read the issue template at the § Repositories path (absent: use the fallback headings below). Confirm the repo with `gh repo view --json owner,name` when in doubt. Assignee: the user's choice; "me" or unspecified means `gh api user --jq .login`.
-2. Ask only what a useful issue needs: the problem if the request is too vague; the expected outcome if "done" would be ambiguous; Type or labels only when not inferable; the parent number when this is a piece of a breakdown. Non-blocking unknowns go in `Notes`.
-3. Load Issue Types and labels. If Types are enabled, select exactly one (live list is the source of truth; never substitute labels for Type); otherwise note it. Existing labels only, the smallest useful set; never create labels unless asked; a missing optional label beats a wrong one.
+1. Read the § Repositories issue template (absent: fallback below). If unsure, confirm repo with `gh repo view --json owner,name`. Use requested assignee; "me"/unspecified: `gh api user --jq .login`.
+2. Clarify only ambiguous problem/outcome, uninferable Type/labels, or breakdown parent number. Put non-blocking unknowns in `Notes`.
+3. Load live Types and labels. If Types are enabled, select exactly one; otherwise note it. Labels never substitute. Use the smallest useful existing label set; omit questionable optional labels; create none unless asked.
 
    ```sh
    gh api graphql -f query='query($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { issueTypes(first: 20) { nodes { id name description isEnabled } } } }' -F owner=OWNER -F repo=REPO
-   gh label list --repo OWNER/REPO --limit 200
+   gh api --paginate repos/OWNER/REPO/labels --jq '.[] | {name, description}'
    ```
 
-4. Draft the body with the template headings, otherwise `## Summary` (problem or requested change), `## Context` (background, impacted flow, current behavior, links, logs), `## Expected outcome` (concrete success criteria; defines "done"), `## Notes` (assumptions, unknowns, placeholders). The body is the What; no task checklist (that is the plan ledger, see `issue-plan`); if the template has a tasks section, leave a one-line pointer to the ledger. Title specific and concise; no implementation promises the request or code does not support.
-5. Create, then set the Type (`gh issue create` has no Type flag). Stage the body in `.tmp-issue-body.md` with a file-write tool; delete it afterward. On auth, permission, or network failure report the exact blocker; never fabricate completion.
+4. Use template headings, otherwise `## Summary` (problem/change), `## Context` (background, impacted flow, current behavior, links/logs), `## Expected outcome` (testable success), `## Notes` (assumptions/unknowns/placeholders). Body = What; tasks belong in `issue-plan`'s ledger. In template task sections, leave a one-line ledger pointer. Use a specific, concise title; no unsupported implementation promises.
+5. Stage `.tmp-issue-body.md` with a file-write tool; create, then set Type (no create flag); delete the file afterward. Report exact auth/permission/network blockers, never fabricated completion.
 
    ```sh
    gh issue create --repo OWNER/REPO --title "..." --body-file .tmp-issue-body.md --label "label-a,label-b" --assignee LOGIN
@@ -28,7 +30,7 @@ Project facts from `AGENTS.md`: **§ Repositories** (repo slug, issue template p
    ```
 
 6. Link under the parent when applicable (Sub-Issue Linking).
-7. Board (unless § Project Board is `none` or the user says not to): add the item, then set its Status to the new-issue status per `issue-plan` § Board Status Transitions; an item without a status appears in no column.
+7. Unless board is `none` or user opts out, add the item and set new-issue Status per `issue-plan` § Board Status Transitions; statusless items appear in no column.
 
    ```sh
    gh project item-add <project-number> --owner <owner> --url ISSUE_URL
@@ -43,7 +45,7 @@ Project facts from `AGENTS.md`: **§ Repositories** (repo slug, issue template p
 
 ## Sub-Issue Linking (shared mechanics)
 
-`issue-refine` and `burndown` delegate splitting here. Keep the parent as the high-level summary and attach each piece as a native sub-issue so the parent shows a progress bar; never dissolve a parent into loose top-level issues or track a breakdown only as text. The API links by the child's REST database `id` (integer), not its number; `<owner>/<repo>` from § Repositories:
+For `issue-refine`/`burndown` splits, retain the summary parent and attach native sub-issues (progress bar), never loose issues or text-only tracking. Link by child's integer REST database `id`, not number; repo from § Repositories:
 
 ```sh
 gh api repos/OWNER/REPO/issues/CHILD_NUMBER --jq '.id'
@@ -51,4 +53,4 @@ gh api --method POST repos/OWNER/REPO/issues/PARENT_NUMBER/sub_issues -F sub_iss
 gh api repos/OWNER/REPO/issues/PARENT_NUMBER/sub_issues --jq '.[].number'
 ```
 
-Verify, then report parent and child numbers. If the endpoint is unavailable (older `gh`, 404/410), say so and surface both numbers for the UI; never leave a child silently orphaned.
+Verify and report parent/child numbers. Endpoint unavailable (older `gh`, 404/410): report both for UI linking; never silently orphan a child.

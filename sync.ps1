@@ -23,6 +23,13 @@ $manifestName = '.metaskills-manifest'
 function Invoke-Check {
     function Fail([string]$Message) { Write-Host "FAIL: $Message"; $script:failures++ }
 
+    if (-not @(Get-ChildItem (Join-Path $repo 'skills') -Directory).Count) { Fail 'no skills found' }
+    if (-not @(Get-ChildItem (Join-Path $repo 'commands') -Filter '*.md').Count) { Fail 'no commands found' }
+    foreach ($dialect in 'claude', 'opencode', 'codex') {
+        $extension = if ($dialect -eq 'codex') { '*.toml' } else { '*.md' }
+        if (-not @(Get-ChildItem (Join-Path $repo "agents/$dialect") -Filter $extension).Count) { Fail "no $dialect agents found" }
+    }
+
     foreach ($dir in Get-ChildItem (Join-Path $repo 'skills') -Directory) {
         $name = $dir.Name
         $skill = Join-Path $dir.FullName 'SKILL.md'
@@ -93,12 +100,55 @@ function Invoke-Check {
     Write-Host "check: $($script:failures) failure(s)"; return 1
 }
 
-if ($Check) {
-    $script:failures = 0
-    exit (Invoke-Check)
+function Assert-Name([string]$Name) {
+    if ($Name -cnotmatch '^[a-zA-Z0-9_][a-zA-Z0-9_.-]*\z' -or $Name.EndsWith('.') -or
+        ($Name.Split('.')[0] -match '^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])$')) {
+        throw "unsafe name: $Name"
+    }
 }
 
+# Reject links, including junctions, rather than resolving them. This preflight
+# assumes no concurrent writers; it is not an atomic installer or a lock.
+function Assert-Path([string]$Path) {
+    if (-not [IO.Path]::IsPathRooted($Path) -or $Path -match '^[A-Za-z]:[^\\/]|^[A-Za-z]:$' -or
+        $Path -match '(^|[\\/])\.{1,2}([\\/]|$)') {
+        throw "unsafe path: $Path"
+    }
+    $current = $Path
+    while ($current) {
+        $item = Get-Item -LiteralPath $current -Force -ErrorAction SilentlyContinue
+        if ($item) {
+            if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "linked path: $current" }
+            if ($current -cne $Path -and -not $item.PSIsContainer) { throw "non-directory ancestor: $current" }
+        }
+        $parent = Split-Path -Parent $current
+        if ($parent -eq $current) { break }
+        $current = $parent
+    }
+}
+function Assert-Tree([string]$Path) {
+    Assert-Path $Path
+    $item = Get-Item -LiteralPath $Path -Force
+    if ($item.PSIsContainer) {
+        $names = @()
+        foreach ($child in Get-ChildItem -LiteralPath $Path -Force) {
+            Assert-Name $child.Name
+            if ($names -contains $child.Name) { throw "case-colliding name: $($child.FullName)" }
+            $names += $child.Name
+            Assert-Tree $child.FullName
+        }
+    } elseif ($item -isnot [IO.FileInfo] -or ($item.UnixMode -match '^[bcps]')) {
+        throw "not a regular file: $Path"
+    }
+}
+foreach ($source in 'skills', 'commands', 'agents') { Assert-Tree (Join-Path $repo $source) }
+$script:failures = 0
+$result = Invoke-Check
+if ($result -ne 0) { exit 1 }
+if ($Check) { exit 0 }
+
 # --- Install -------------------------------------------------------------------
+Assert-Path $env:USERPROFILE
 $targets = @{
     ClaudeSkills    = Join-Path $env:USERPROFILE '.claude\skills'
     ClaudeAgents    = Join-Path $env:USERPROFILE '.claude\agents'
@@ -110,56 +160,89 @@ $targets = @{
     CodexAgents     = Join-Path $env:USERPROFILE '.codex\agents'
 }
 
-foreach ($dir in $targets.Values) {
-    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+function Test-Set([string]$Root, [System.IO.FileSystemInfo[]]$Sources) {
+    Assert-Path $Root
+    if ((Test-Path -LiteralPath $Root) -and -not (Test-Path -LiteralPath $Root -PathType Container)) {
+        throw "not a directory: $Root"
+    }
+    $manifest = Join-Path $Root $manifestName
+    Assert-Path $manifest
+    $owned = @()
+    if (Test-Path -LiteralPath $manifest) {
+        if (-not (Test-Path -LiteralPath $manifest -PathType Leaf)) { throw "not a regular manifest: $manifest" }
+        Assert-Tree $manifest
+        $bytes = [IO.File]::ReadAllBytes($manifest)
+        foreach ($byte in $bytes) {
+            if ($byte -gt 127 -or [char]$byte -cnotmatch '[A-Za-z0-9_.\r\n-]') { throw "invalid manifest bytes: $manifest" }
+        }
+        if ([Text.Encoding]::ASCII.GetString($bytes) -match '\r(?!\n|\z)') { throw "invalid manifest line ending: $manifest" }
+        foreach ($old in [IO.File]::ReadAllLines($manifest)) {
+            Assert-Name $old
+            if ($owned -contains $old) { throw "duplicate manifest name: $old" }
+            $owned += $old
+            $path = Join-Path $Root $old
+            Assert-Path $path
+            if (Test-Path -LiteralPath $path) { Assert-Tree $path }
+        }
+    }
+    foreach ($src in $Sources) {
+        Assert-Name $src.Name
+        $dest = Join-Path $Root $src.Name
+        Assert-Path $dest
+        if ((Test-Path -LiteralPath $dest) -and $owned -cnotcontains $src.Name) { throw "unmanaged collision: $dest" }
+    }
+    foreach ($name in (@($Sources | ForEach-Object Name) + $owned)) {
+        if (Test-Path -LiteralPath $Root) {
+            foreach ($child in Get-ChildItem -LiteralPath $Root -Force) {
+                if ($child.Name -eq $name -and $child.Name -cne $name) { throw "case collision: $($child.FullName)" }
+            }
+        }
+    }
 }
+$skills = @(Get-ChildItem (Join-Path $repo 'skills') -Directory)
+$commands = @(Get-ChildItem (Join-Path $repo 'commands') -Filter '*.md')
+Test-Set $targets.ClaudeSkills $skills
+Test-Set $targets.OpencodeSkills $skills
+Test-Set $targets.CodexSkills $skills
+Test-Set $targets.OpencodeCommand $commands
+Test-Set $targets.CodexPrompts $commands
+Test-Set $targets.OpencodeAgents (Get-ChildItem (Join-Path $repo 'agents/opencode') -Filter '*.md')
+Test-Set $targets.ClaudeAgents (Get-ChildItem (Join-Path $repo 'agents/claude') -Filter '*.md')
+Test-Set $targets.CodexAgents (Get-ChildItem (Join-Path $repo 'agents/codex') -Filter '*.toml')
 
 # Install-Set <root> <sources...>: dirs copied recursively, files copied.
 # Writes the manifest and removes anything the previous manifest listed that
 # is no longer in the set.
 function Install-Set {
     param([string]$Root, [System.IO.FileSystemInfo[]]$Sources)
+    if (-not (Test-Path -LiteralPath $Root) -and $PSCmdlet.ShouldProcess($Root, 'create directory')) {
+        New-Item -ItemType Directory -Force -Path $Root | Out-Null
+    }
     $entries = @()
     foreach ($src in $Sources) {
         $name = $src.Name
         $entries += $name
         $dest = Join-Path $Root $name
         if ($PSCmdlet.ShouldProcess($dest, "install '$name'")) {
-            if ($src.PSIsContainer) {
-                if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
-                Copy-Item -Recurse -Path $src.FullName -Destination $dest
-            } else {
-                Copy-Item -Force -Path $src.FullName -Destination $dest
-            }
+            if (Test-Path -LiteralPath $dest) { Remove-Item -Recurse -Force -LiteralPath $dest }
+            Copy-Item -Recurse -LiteralPath $src.FullName -Destination $dest
         }
     }
     $manifest = Join-Path $Root $manifestName
-    if (Test-Path $manifest) {
-        foreach ($old in Get-Content $manifest) {
-            if ([string]::IsNullOrWhiteSpace($old) -or $entries -contains $old) { continue }
+    if (Test-Path -LiteralPath $manifest) {
+        foreach ($old in Get-Content -LiteralPath $manifest) {
+            if ($entries -ccontains $old) { continue }
             $stale = Join-Path $Root $old
-            if ((Test-Path $stale) -and $PSCmdlet.ShouldProcess($stale, "remove stale '$old'")) {
-                Remove-Item -Recurse -Force $stale
+            if ((Test-Path -LiteralPath $stale) -and $PSCmdlet.ShouldProcess($stale, "remove stale '$old'")) {
+                Remove-Item -Recurse -Force -LiteralPath $stale
             }
         }
     }
     if ($PSCmdlet.ShouldProcess($manifest, 'write manifest')) {
+        # Replace the entry, not the inode: a manifest may have external hard links.
+        [System.IO.File]::Delete($manifest)
         [System.IO.File]::WriteAllLines($manifest, [string[]]$entries)
     }
-}
-
-# Legacy installs that predate the manifest. Safe to delete once every
-# machine has synced at least once with manifests in place.
-$legacy = @(
-    (Join-Path $targets.ClaudeSkills 'plan'), (Join-Path $targets.OpencodeSkills 'plan'), (Join-Path $targets.CodexSkills 'plan'),
-    (Join-Path $targets.OpencodeCommand 'plan.md'), (Join-Path $targets.CodexPrompts 'plan.md'),
-    (Join-Path $targets.ClaudeSkills 'agent-login'), (Join-Path $targets.OpencodeSkills 'agent-login'), (Join-Path $targets.CodexSkills 'agent-login'),
-    (Join-Path $targets.ClaudeSkills 'deploy'), (Join-Path $targets.OpencodeSkills 'deploy'), (Join-Path $targets.CodexSkills 'deploy'),
-    (Join-Path $targets.OpencodeCommand 'deploy.md'), (Join-Path $targets.CodexPrompts 'deploy.md'),
-    (Join-Path $targets.ClaudeAgents 'deploy.md'), (Join-Path $targets.OpencodeAgents 'deploy.md'), (Join-Path $targets.CodexAgents 'deploy.toml')
-)
-foreach ($path in $legacy) {
-    if ((Test-Path $path) -and $PSCmdlet.ShouldProcess($path, 'remove legacy')) { Remove-Item -Recurse -Force $path }
 }
 
 # --- Skills: identical trees for all three harnesses ---------------------------

@@ -1,13 +1,13 @@
 ---
 name: weekly-review
-description: Write a weekly engineering status update to Docs/status/ from GitHub issues, PRs, commits, CI runs, board counts, and local docs. Use when asked for a weekly review, status update, or progress report.
+description: Aggregate engineering activity into Docs/status/. Use for a weekly review, status update, or progress report.
 ---
 
 # Weekly Review
 
-Deterministic aggregation, not frontier reasoning; when delegating, prefer a cost-efficient model with `Docs/` write access and read-only `gh`/`git`.
+Deterministic aggregation; when delegating, prefer a cost-efficient model with `Docs/` writes and read-only `gh`/`git`.
 
-Project facts from `AGENTS.md`: **§ Project Overview** (product, themes), **§ Repositories** (app repo; deployment repo if any), **§ Project Board** (optional; skip board counts if absent). § Repositories missing: name it and stop.
+From `AGENTS.md`: **§ Project Overview** (product/themes), **§ Repositories** (app/deployment repos), **§ Project Board**. Explicit `board: none`: skip counts per `issue-plan`. Missing/incomplete board facts or required sections: name them and stop.
 
 ## Process
 
@@ -15,18 +15,16 @@ Project facts from `AGENTS.md`: **§ Project Overview** (product, themes), **§ 
 2. **Gather**:
 
    ```sh
-   gh issue list --state all --limit 200 --json number,title,state,labels,assignees,updatedAt,closedAt,url
-   gh pr list --state all --limit 100 --json number,title,state,labels,author,updatedAt,mergedAt,url
-   gh run list --repo <app-repo-slug> --limit 20
-   gh run list --repo <deployment-repo-slug> --limit 20   # only when § Repositories lists one
+   gh api --paginate 'repos/<owner>/<repo>/issues?state=all&per_page=100'
+   gh api --paginate 'repos/<owner>/<repo>/pulls?state=all&per_page=100'
+   gh api --paginate 'repos/<owner>/<repo>/actions/runs?per_page=100'
    git log --since="7 days ago" --oneline --decorate
-   gh project item-list <project-number> --owner <owner> --format json --limit 200   # only when § Project Board defines a board
    ```
 
-   Plus `Docs/` and `Docs/status/` when present. Local validation only if the user asks or it is cheap and relevant.
+   Use documented app repo; repeat runs only for documented deployment repo. Exclude `pull_request` issue entries. Fully paginate before date filtering; retain open items for backlog metrics. Board counts: `issue-plan` § Board Status Transitions' complete read, consuming-repo Issue filter, retained URL/repo identity. Samples are not totals; unavailable/incomplete data is unknown, never zero/complete. Read existing `Docs/` and `Docs/status/`. Local validation only if requested or cheap and relevant.
 
-3. **Themes** from the data, not a fixed list: labels and milestones present; product areas in § Project Overview; recurring subsystems in commits and paths. Always include security/auth, deployment and CI, and documentation when activity exists.
-4. **Critical items**: highest-priority open issues; blocked work; stale PRs; failed CI/CD (app and deployment repos); new risks (data integrity, auth).
+3. **Themes**: derive from labels/milestones, § Project Overview areas, recurring commit/path subsystems. Include active security/auth, deployment/CI, documentation themes.
+4. **Critical items**: highest-priority open issues, blockers, stale PRs, failed app/deployment CI/CD, new data-integrity/auth risks.
 5. **Write** `Docs/status/YYYY-MM-DD-weekly-review.md` (create the directory if needed):
 
    ```md
@@ -40,6 +38,6 @@ Project facts from `AGENTS.md`: **§ Project Overview** (product, themes), **§ 
    ## Next Week
    ```
 
-Metrics: open issues by priority/label; top blockers opened/closed; PRs merged and open; build/test status only as observed, never claimed; last pipeline result per repo; board counts by Status when defined; milestone/ship-list status when `AGENTS.md` or `Docs/` defines one.
+Metrics: open issues by priority/label; top blockers opened/closed; merged/open PRs; observed-only build/test status; latest pipeline per repo; defined board Status counts; milestone/ship-list status if defined in `AGENTS.md`/`Docs/`.
 
-Link issues and PRs. Mark stale historical docs as historical if referenced. No secrets or token values.
+Link issues/PRs; mark stale docs historical. No secrets/token values.

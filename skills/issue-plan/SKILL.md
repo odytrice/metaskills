@@ -1,62 +1,70 @@
 ---
 name: issue-plan
-description: Design the How for a refined issue (approach, touch points, validation, risks, tasks), claim it on the board, and post the single plan-ledger comment. Architect-only; phase 1 of dev-cycle. Use when asked to plan an issue or design its approach.
+description: Plan and claim a refined issue in one living ledger. Use when asked to plan an issue or design its approach.
 ---
 
 # Plan Issue
 
-The issue body holds the What (`issue-refine`); this skill decides the How and records it as one living comment on the issue that `issue-implement` executes. It designs; it does not implement. Always run by an `architect`.
+Architect-only: design the How for `issue-implement`, never implement. The issue body holds the What (`issue-refine`); the living ledger holds the How.
 
 Project facts from `AGENTS.md`: **§ Project Board**, **§ Repositories**, **§ Code Layout & Tech Stack**, **§ Build & Validation**, **§ Review Notes**. Missing section: name it and stop.
 
+Shared contract for all callers: explicit § Project Board `none` (including `board: none`) skips board reads, claims, and transitions; report `board: none`. Absent/incomplete board facts: stop, never infer `none`.
+
 ## The Plan Ledger
 
-One comment per issue, for its whole lifecycle, identified by `<!-- plan-ledger -->` as the first line. Never post a second; find and edit in place. Only this skill creates it. Issue bodies never carry a design or task checklist.
+One lifecycle comment per issue, first line `<!-- plan-ledger -->`. Only this skill creates it; thereafter edit in place, never post another. No design or task checklist in issue bodies.
 
 ## Approval Gate (soft)
 
-Most plans are claimed and posted without a round trip. Present the plan and wait **only** when one holds:
+Claim and post without approval **unless**:
 
-- Two or more approaches with materially different trade-offs and no clear winner from the codebase or `AGENTS.md`.
-- The design must widen the issue's scope or break a `## Notes` constraint.
-- A split, a migration or backfill of existing data, a public contract change, or a security/permission decision.
-- The What is still ambiguous after reading the codebase.
+- Materially different approaches have no clear winner in the codebase or `AGENTS.md`.
+- Scope widens or a `## Notes` constraint breaks.
+- A split, existing-data migration/backfill, public contract change, or security/permission decision is needed.
+- The What remains ambiguous after code exploration.
 
-When gating, ask the specific decision with a recommendation, then stop. Otherwise state the chosen approach and rejected alternatives in the report. As a non-interactive worker never wait: return the plan and decision points without claiming or posting.
+At the gate, ask the specific decision with a recommendation and stop; non-interactive workers return plan/decision points without waiting, claiming, or posting. Otherwise report the chosen approach and rejected alternatives.
 
 ## Board Status Transitions (shared mechanics)
 
-`issue-raise`, `issue-refine`, `issue-implement`, and `code-review` reference this section. Resolve `<project-number>`, `<owner>`, and option names from § Project Board; look up IDs live, never hardcode.
+Shared by `issue-raise`, `issue-refine`, `issue-implement`, and `code-review`. Resolve project number, owner, and option names from § Project Board; look up IDs live.
 
 ```sh
 gh project view <project-number> --owner <owner> --format json --jq '.id'
 gh project field-list <project-number> --owner <owner> --format json --jq '.fields[] | select(.name=="Status") | {id, options}'
-gh project item-list <project-number> --owner <owner> --format json --limit 200 --jq '.items[] | select(.content.number==<issue-number>) | {id, status, title}'
+gh project item-list <project-number> --owner <owner> --format json --limit 1 --jq '.totalCount'
+gh project item-list <project-number> --owner <owner> --format json --limit <actual-total-count>
 gh project item-edit --project-id <project-id> --id <item-id> --field-id <status-field-id> --single-select-option-id <option-id>
 ```
 
-After every transition re-run the item-list lookup and report the verified status, not the intended one. Issue not on the board: do not add it silently; note and ask. Missing `gh project` scope: ask the user to run the refresh command in § Project Board. § Project Board `none`: skip transitions.
+Before item-edit, require returned item count = returned `totalCount`; zero needs no second fetch. Changed total: retry; unprovable completeness: stop. A fixed limit is not completeness. Match Issue content by canonical URL from `gh issue view <issue> --repo <repo-slug> --json url`, never number alone. Require one match: zero means ask, never silently add; multiple means stop as ambiguous. Batch/report reads retain content type, URL, and repository identity; exclude PRs/drafts and filter to § Repositories' consuming repo before status selection or counting.
+
+After each transition repeat the complete lookup; report verified status. Missing `gh project` scope: ask the user to run § Project Board's refresh command. `board: none`: skip these commands.
 
 ## Claim (status as lock)
 
-Moving ready → in-progress is the claim; claim only from ready. Backlog: not refined, route through `issue-refine`. In progress / in review / done: someone else's or finished; stop and report `claimed` (a ledger without a PR may be a crashed run, but only the user can say so: re-plan or update an existing ledger only when explicitly asked to resume). Transition, then re-read; if the status changed under you, yield.
+Claim only ready -> in-progress; re-read after transition and yield if status changed under you. Backlog: route to `issue-refine`. In progress / in review / done or any existing ledger: stop as `claimed`, even ready/boardless. Never infer a crashed run; resume requires explicit user authorization, not batch dispatch.
 
-The board cannot tell two simultaneous claimants apart, so the ledger comment is the tie-break: after posting, re-fetch the comments; if another `<!-- plan-ledger -->` comment has a lower id than yours, delete yours (`gh api -X DELETE /repos/<owner>/<repo>/issues/comments/<your-comment-id>`) and report `claimed`, leaving the status alone.
+Sole coordinator exception: one **same-cycle blocked-plan repair**. Require `dev-cycle`'s issue URL, ledger REST id/link, current-cycle claim/explicit-resume evidence, and implementation blockers. Verify the ledger and in-progress or `board: none`; edit only that ledger under the same Approval Gate. No re-claim, second ledger, or takeover of unrelated/parked runs. Second blocker or unresolved decision: stop the cycle.
+
+Simultaneous claimants use the ledger tie-break: after posting, re-fetch all comment pages. Another ledger with a lower numeric REST id: delete only yours (`gh api -X DELETE /repos/<owner>/<repo>/issues/comments/<your-comment-id>`), report `claimed`, leave status alone.
 
 ## Workflow
 
-1. Load the issue and comments; check for an existing ledger and the board status.
+1. Load issue, all comments, ledger, and board status. Use paginated REST ledger ids, not `gh issue view --json comments` GraphQL node ids:
 
    ```sh
-   gh issue view <number-or-url> --json number,title,body,labels,state,url,comments
+   gh issue view <number-or-url> --repo <repo-slug> --json number,title,body,labels,state,url
+   gh api --paginate repos/<owner>/<repo>/issues/<number>/comments --jq '.[] | select(.body | split("\n")[0] == "<!-- plan-ledger -->") | {id, html_url, body}'
    ```
 
-2. Fix the target: `## Expected outcome` is the goal, `## Notes` constraints are binding. Unclear What: stop and route through `issue-refine`. If the plan reveals several issues, route through `issue-refine` (parent kept, native sub-issues), then plan each child.
-3. Explore: the code the outcome touches, the existing pattern for that kind of change, contracts and data it depends on, tests covering the area, validation commands in § Build & Validation. Follow the codebase's conventions unless the issue is about changing them; never invent paths.
-4. Design: enumerate viable approaches, choose the smallest that satisfies the acceptance criteria, note in one line each why the others lose. Spell out interface, contract, data, and configuration changes; compatibility and migration needs; the validation strategy; risks and their containment.
-5. Decompose into the smallest individually implementable and verifiable tasks, dependency-ordered, each with a code area and a validation signal; note parallelizable ones.
+2. Target `## Expected outcome`; obey `## Notes`. Unclear What: stop for `issue-refine`. Several issues: refine into native sub-issues, retain parent, then plan each child.
+3. Explore affected code, existing patterns, dependent contracts/data, tests, and § Build & Validation commands. Follow conventions unless changing them is the issue; never invent paths.
+4. Enumerate viable approaches; choose the smallest meeting acceptance criteria and give one-line rejections of alternatives. Specify interface/contract/data/config changes, compatibility/migration needs, validation, risks and containment.
+5. Make minimal independently implementable/verifiable tasks with code area and validation signal; dependency-order them and mark parallelism.
 6. Apply the Approval Gate; if it triggers, present and stop.
-7. Claim (skip if there is no board, or the user asked to resume an existing ledger).
+7. Claim unless explicit `board: none`, authorized resume, or verified same-cycle repair. Boardless creation: re-check no ledger exists; ledger/tie-break signal ownership.
 8. Write the ledger to `.tmp-plan-<number>.md` with a file-write tool (not shell redirection):
 
    ```md
@@ -87,19 +95,20 @@ The board cannot tell two simultaneous claimants apart, so the ledger comment is
    _None._
    ```
 
-   `Approach`, `Tasks`, `Blockers` required; for a small obvious change a one-sentence Approach suffices and the other sections may be omitted.
+   Require `Approach`, `Tasks`, `Blockers`. Small obvious changes may use one-sentence Approach and omit other sections.
 
-9. Post (only after a confirmed claim), then delete the temp file. `<owner>/<repo>` from § Repositories.
+9. Immediately re-fetch all REST comments. Create only after confirmed claim or `board: none` with no ledger; use § Repositories' `<owner>/<repo>`, retaining numeric `id` and `html_url`:
 
    ```sh
-   gh issue comment <number> --body-file .tmp-plan-<number>.md
+   gh api -X POST repos/<owner>/<repo>/issues/<number>/comments -F body=@.tmp-plan-<number>.md --jq '{id, html_url}'
    ```
 
-   Then the tie-break in § Claim. Resuming an existing ledger (explicit user request only): edit in place, never a second comment.
+   Apply § Claim's paginated numeric-id tie-break, including boardless. Multiple pre-existing ledgers: stop as ambiguous; never delete others'. Authorized resume/repair: re-fetch the unique ledger, preserve intervening updates, PATCH its numeric REST id:
 
    ```sh
-   gh issue view <number> --json comments --jq '.comments[] | select(.body | startswith("<!-- plan-ledger -->")) | .id'
    gh api -X PATCH /repos/<owner>/<repo>/issues/comments/<comment-id> -F body=@.tmp-plan-<number>.md
    ```
 
-10. Report: issue and plan comment links, approach in one line with rejected alternatives, task count, sequence, risks, blockers. Not claimed: `claimed` or the reason, and that nothing was posted.
+   Verify stored body and ledger uniqueness via paginated REST. Never use GraphQL ids for REST PATCH/DELETE. Create a fresh temp file per update; retain through POST/PATCH and verification, then remove even on failure. On failure, report it; never claim success.
+
+10. Report issue/ledger links, one-line approach and rejected alternatives, task count, sequence, risks, blockers. Not claimed: reason or `claimed`, and nothing posted.

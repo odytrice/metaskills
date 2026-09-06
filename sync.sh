@@ -79,13 +79,47 @@ check() {
     fi
 }
 
-if [[ $mode == check ]]; then
-    check
-    exit
-fi
+# Reject links rather than resolving them: even an internal link can redirect
+# a later recursive copy/removal. Preflight is not a concurrent-writer lock.
+die() { echo "FAIL: $*" >&2; exit 1; }
+safe_name() {
+    local upper
+    [[ "$1" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]*$ && "$1" != *. ]] || die "unsafe name: $1"
+    upper="$(printf '%s' "${1%%.*}" | tr '[:lower:]' '[:upper:]')"
+    case "$upper" in CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9]) die "reserved name: $1" ;; esac
+}
+safe_path() {
+    local path="$1"
+    [[ "$path" == /* && "$path" != *'/../'* && "$path" != */.. && "$path" != *'/./'* && "$path" != */. ]] || die "unsafe path: $path"
+    while [[ "$path" != / ]]; do
+        [[ ! -L "$path" ]] || die "linked path: $path"
+        if [[ "$path" != "$1" && -e "$path" && ! -d "$path" ]]; then die "non-directory ancestor: $path"; fi
+        path="$(dirname "$path")"
+    done
+}
+safe_tree() {
+    local path="$1" child names='|' lower
+    safe_path "$path"
+    [[ -e "$path" ]] || die "missing source/path: $path"
+    if [[ -d "$path" ]]; then
+        for child in "$path"/* "$path"/.[!.]* "$path"/..?*; do
+            [[ -e "$child" || -L "$child" ]] || continue
+            safe_name "${child##*/}"
+            lower="$(printf '%s' "${child##*/}" | tr '[:upper:]' '[:lower:]')"
+            [[ "$names" != *"|$lower|"* ]] || die "case-colliding name: $child"
+            names+="$lower|"
+            safe_tree "$child"
+        done
+    elif [[ ! -f "$path" ]]; then die "not a regular file: $path"; fi
+}
+for source in "$repo/skills" "$repo/commands" "$repo/agents"; do safe_tree "$source"; done
+check
+[[ $mode != check ]] || exit 0
 
 # --- Install -------------------------------------------------------------------
 dry_run=false; [[ $mode == dry-run ]] && dry_run=true
+[[ -n "$HOME" ]] || die 'HOME must be an absolute directory'
+safe_path "$HOME"
 
 claude_skills="$HOME/.claude/skills"
 claude_agents="$HOME/.claude/agents"
@@ -97,10 +131,52 @@ codex_prompts="$HOME/.codex/prompts"
 codex_agents="$HOME/.codex/agents"
 manifest_name=".metaskills-manifest"
 
-for dir in "$claude_skills" "$claude_agents" "$opencode_skills" "$opencode_agents" \
-           "$opencode_command" "$codex_skills" "$codex_prompts" "$codex_agents"; do
-    $dry_run || mkdir -p "$dir"
-done
+preflight_set() {
+    local root="$1" old src name owned='|' seen='|' lower child
+    local -a names=()
+    shift
+    safe_path "$root"
+    [[ ! -e "$root" || -d "$root" ]] || die "not a directory: $root"
+    safe_path "$root/$manifest_name"
+    if [[ -e "$root/$manifest_name" ]]; then
+        [[ -f "$root/$manifest_name" ]] || die "not a regular manifest: $root"
+        # Detect NUL and other bytes that shell read would otherwise discard.
+        LC_ALL=C tr -d 'A-Za-z0-9_.\r\n-' < "$root/$manifest_name" | cmp -s - /dev/null || die "invalid manifest bytes: $root"
+        while IFS= read -r old || [[ -n "$old" ]]; do
+            old="${old%$'\r'}"
+            safe_name "$old"
+            lower="$(printf '%s' "$old" | tr '[:upper:]' '[:lower:]')"
+            [[ "$seen" != *"|$lower|"* ]] || die "duplicate manifest name: $old"
+            seen+="$lower|"; owned+="$old|"
+            names+=("$old")
+            safe_path "$root/$old"
+            if [[ -e "$root/$old" ]]; then safe_tree "$root/$old"; fi
+        done < "$root/$manifest_name"
+    fi
+    for src in "$@"; do
+        name="${src##*/}"; safe_name "$name"
+        safe_path "$root/$name"
+        if [[ -e "$root/$name" && "$owned" != *"|$name|"* ]]; then die "unmanaged collision: $root/$name"; fi
+        names+=("$name")
+    done
+    for name in "${names[@]}"; do
+        # Reject case aliases even on case-sensitive filesystems.
+        for child in "$root"/* "$root"/.[!.]* "$root"/..?*; do
+            [[ -e "$child" || -L "$child" ]] || continue
+            lower="$(printf '%s' "${child##*/}" | tr '[:upper:]' '[:lower:]')"
+            if [[ "$lower" == "$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]')" && "${child##*/}" != "$name" ]]; then die "case collision: $child"; fi
+        done
+    done
+}
+skill_dirs=(); for s in "$repo"/skills/*/; do skill_dirs+=("${s%/}"); done
+preflight_set "$claude_skills" "${skill_dirs[@]}"
+preflight_set "$opencode_skills" "${skill_dirs[@]}"
+preflight_set "$codex_skills" "${skill_dirs[@]}"
+preflight_set "$opencode_command" "$repo"/commands/*.md
+preflight_set "$codex_prompts" "$repo"/commands/*.md
+preflight_set "$opencode_agents" "$repo"/agents/opencode/*.md
+preflight_set "$claude_agents" "$repo"/agents/claude/*.md
+preflight_set "$codex_agents" "$repo"/agents/codex/*.toml
 
 join_list() {
     local out="" item
@@ -113,6 +189,7 @@ join_list() {
 # is no longer in the set.
 install_set() {
     local root="$1"; shift
+    $dry_run || mkdir -p "$root"
     local -a entries=()
     local src name
     for src in "$@"; do
@@ -120,39 +197,27 @@ install_set() {
         entries+=("$name")
         if $dry_run; then
             echo "would install '$name' -> $root/$name"
-        elif [[ -d "$src" ]]; then
-            rm -rf "$root/$name"; cp -R "$src" "$root/$name"
         else
-            cp -f "$src" "$root/$name"
+            rm -rf "$root/$name"; cp -R "$src" "$root/$name"
         fi
     done
     local old
     if [[ -f "$root/$manifest_name" ]]; then
-        while IFS= read -r old; do
-            [[ -z "$old" ]] && continue
-            if ! printf '%s\n' "${entries[@]}" | grep -qx -- "$old"; then
+        while IFS= read -r old || [[ -n "$old" ]]; do
+            old="${old%$'\r'}"
+            if ! printf '%s\n' "${entries[@]}" | grep -Fqx -- "$old"; then
                 if $dry_run; then echo "would remove stale '$old' from $root"; else rm -rf "${root:?}/$old"; fi
             fi
         done < "$root/$manifest_name"
     fi
-    $dry_run || printf '%s\n' "${entries[@]}" > "$root/$manifest_name"
+    if ! $dry_run; then
+        # Replace the entry, not the inode: a manifest may have external hard links.
+        rm -f "$root/$manifest_name"
+        printf '%s\n' "${entries[@]}" > "$root/$manifest_name"
+    fi
 }
 
-# Legacy installs that predate the manifest. Safe to delete once every
-# machine has synced at least once with manifests in place.
-for legacy in "$claude_skills/plan" "$opencode_skills/plan" "$codex_skills/plan" \
-              "$opencode_command/plan.md" "$codex_prompts/plan.md" \
-              "$claude_skills/agent-login" "$opencode_skills/agent-login" "$codex_skills/agent-login" \
-              "$claude_skills/deploy" "$opencode_skills/deploy" "$codex_skills/deploy" \
-              "$opencode_command/deploy.md" "$codex_prompts/deploy.md" \
-              "$claude_agents/deploy.md" "$opencode_agents/deploy.md" "$codex_agents/deploy.toml"; do
-    if [[ -e "$legacy" ]]; then
-        if $dry_run; then echo "would remove legacy '$legacy'"; else rm -rf "$legacy"; fi
-    fi
-done
-
 # --- Skills: identical trees for all three harnesses ---------------------------
-skill_dirs=(); for s in "$repo"/skills/*/; do skill_dirs+=("${s%/}"); done
 install_set "$claude_skills"   "${skill_dirs[@]}"
 install_set "$opencode_skills" "${skill_dirs[@]}"
 install_set "$codex_skills"    "${skill_dirs[@]}"

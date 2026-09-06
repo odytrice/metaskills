@@ -2,34 +2,31 @@
 
 ## Project Overview
 
-MetaSkills is the canonical shared agent harness for the user's coding-agent workflows. It owns reusable skills, command wrappers, and role definitions that are installed into Claude Code, opencode, and Codex user-level configuration directories.
+MetaSkills owns the user's canonical shared skills, command wrappers, and agent roles, installed into Claude Code, opencode, and Codex user-level configs.
 
-The repository is intentionally project-agnostic: canonical skills must not bake in facts about a consuming application. They must resolve project-specific information from that project's own `AGENTS.md`, using the contract in `AGENTS.template.md`.
+Canonical skills are project-agnostic: resolve facts from the consuming project's `AGENTS.md` under `AGENTS.template.md`; stop rather than guess missing facts. Never embed repo slugs, board IDs, branch defaults, environment URLs, cluster/image names, credentials, deployment facts, or local-machine-only paths.
 
 ## Code Layout & Tech Stack
 
-- `skills/<name>/SKILL.md` contains canonical skill instructions shared across Claude Code, opencode, and Codex.
-- `commands/<name>.md` contains thin command wrappers for opencode commands and Codex prompts. Claude Code invokes skills directly as slash commands, so it does not get command wrapper copies.
-- `agents/opencode/*.md` contains opencode subagent definitions.
-- `agents/claude/*.md` contains Claude Code subagent definitions.
-- `agents/codex/*.toml` contains Codex agent role definitions.
-- `AGENTS.template.md` is the required contract for repositories that consume these shared skills.
-- `sync.ps1` and `sync.sh` install the managed harness files into user-level configuration directories.
-- `.opencode/skills/` contains OpenCode-only project-maintenance skills for this repository. Do not mirror these into the canonical shared `skills/` tree unless the behavior should be installed globally.
+- `skills/<name>/SKILL.md`: canonical skills shared across all three harnesses.
+- `commands/<name>.md`: thin same-named skill + `$ARGUMENTS` handoffs for opencode commands and Codex prompts, never duplicated workflows. Claude Code uses skills directly as slash commands; no wrapper copies.
+- `agents/opencode/*.md`, `agents/claude/*.md`, `agents/codex/*.toml`: subagent/role definitions with identical bodies across dialects; configuration syntax differs.
+- `AGENTS.template.md`: required consuming-project contract.
+- `sync.ps1`, `sync.sh`: managed harness installers.
+- `.opencode/skills/`: OpenCode-only repository maintenance. Mirror into `skills/` only if behavior should install globally.
 
-The repo is mostly Markdown, TOML, PowerShell, and Bash. Keep changes small, explicit, and portable across Windows and Unix where the sync scripts overlap.
+Mostly Markdown, TOML, PowerShell, and Bash. Keep changes small, explicit, and portable across Windows/Unix.
 
-When changing a workflow, update all affected dialects together:
+Update affected surfaces together:
 
-- Skill behavior: update the canonical `skills/<name>/SKILL.md`.
-- Command invocation: update `commands/<name>.md` only if the command handoff changes.
-- Agent role behavior: keep `agents/opencode`, `agents/claude`, and `agents/codex` semantically aligned.
-- Install behavior: update both `sync.ps1` and `sync.sh`.
-- User-facing documentation: update `README.md` when layout, install behavior, or workflow changes.
+- Skills: canonical `skills/<name>/SKILL.md`; commands only when handoffs change.
+- Roles: all three dialects.
+- Installation: both sync scripts, including added/renamed/removed managed files.
+- Layout, installation, or workflows: `README.md`.
 
 ## Build & Validation
 
-There is no compiled application or automated test suite in this repo. The sync scripts carry the lint: run it first, then inspect and dry-run:
+No compiled application. Run sync lint first, then inspect and dry-run:
 
 ```powershell
 git status --short
@@ -38,30 +35,26 @@ git diff --check
 .\sync.ps1 -WhatIf
 ```
 
-For Unix-shell changes, also review `sync.sh` and, when a Bash environment is available, run:
+For Unix-shell changes, also review `sync.sh` and run when Bash is available:
 
 ```bash
 ./sync.sh --check
 ./sync.sh --dry-run
 ```
 
-`--check` / `-Check` verifies skill frontmatter, skill/command pairing in both directions, agent body parity across the three dialects, PowerShell-only shell samples, and em/en dashes. Both scripts must report the same findings.
+`--check` / `-Check` verifies skill frontmatter (`name`, `description`), bidirectional skill/command pairing, three-dialect agent body parity, PowerShell-only shell samples, and em/en dashes. Both scripts must report identical findings.
 
-For skill or agent changes, read the changed files and verify:
+Run `python3 tests/test_installers.py` (or `python` on Windows) for isolated installer regression tests. Unavailable Bash/PowerShell runtimes are skipped, not validated. Installer tests must cover hard-linked metadata as well as symlinks, and byte-sensitive fixtures must avoid platform newline translation. `tests/workflow-scenarios.md` contains manual instruction evaluations, not executable behavioral tests.
 
-- `SKILL.md` frontmatter has `name` and `description`.
-- Skills do not contain project-specific repo slugs, board IDs, branch defaults, environment URLs, cluster names, image names, credentials, or local-machine-only paths.
-- Skills require missing project facts to come from the consuming repo's `AGENTS.md` and stop rather than guess.
-- Command wrappers remain thin `$ARGUMENTS` handoffs to same-named skills.
-- Agent role definitions stay semantically aligned across Claude Code, opencode, and Codex dialects.
+Read changed skills/agents to verify the project-fact contract and layout invariants above; lint alone does not validate behavior.
 
 DB tripwire files: none. This repository has no database layer or integration database suite.
 
 ## Project Board
 
-No GitHub Project board is currently documented for this repository. Skills that require board owner, project number, or Status option names must stop and ask for those details rather than guessing.
+No board documented. Skills needing board owner, project number, or Status option names must stop and ask.
 
-If a board is added later, record the owner/org, project number, and Status lifecycle here. Do not record field or option IDs; look those up live with `gh project field-list`.
+If added, record owner/org, project number, and Status lifecycle here. Look up field/option IDs live with `gh project field-list`; never record them.
 
 ## Repositories
 
@@ -75,8 +68,7 @@ None. This repository has no running environments.
 
 ## Branch Map
 
-- `master` is the primary integration branch for harness changes.
-- Pull requests should target `master` unless the user explicitly names another base branch.
+- `master`: primary integration branch and PR base unless the user explicitly names another base.
 
 ## Agent Login
 
@@ -84,13 +76,4 @@ Not applicable. This repository has no running web application, browser login fl
 
 ## Review Notes
 
-Review harness changes for instruction drift and cross-harness parity before style concerns.
-
-Key review checks:
-
-- Canonical skills must stay project-agnostic and resolve project facts from the consuming repo's `AGENTS.md`.
-- Do not add hardcoded GitHub Project IDs, repository-specific branch assumptions, environment URLs, credentials, or deployment facts to canonical skills.
-- Keep Claude Code, opencode, and Codex agent role behavior aligned even when their file formats differ.
-- Keep opencode and Codex command wrappers thin; they should not duplicate skill workflows.
-- Keep `sync.ps1` and `sync.sh` behavior equivalent when adding, renaming, or removing managed files.
-- Do not alter user-level config directories directly from this repo except through the sync scripts or an explicit user request.
+Prioritize instruction drift and cross-harness parity over style. Enforce the project-fact, wrapper, role, and installer invariants above. Never alter user-level configs except through sync scripts or an explicit user request.

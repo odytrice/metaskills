@@ -1,28 +1,28 @@
 ---
 name: setup
-description: Set up, repair, or reconfigure the project's local, Docker Compose, or CI environment from its AGENTS.md. Use when asked to set up, install, bootstrap, or fix the dev environment.
+description: Configure project environments from AGENTS.md. Use to set up, install, bootstrap, or repair local, Docker Compose, or CI environments.
 ---
 
 # Setup
 
-Project facts from `AGENTS.md`: **§ Build & Validation** (toolchain versions, commands, compose targets; missing: name it and stop, never guess commands or versions), **§ Code Layout & Tech Stack**, **§ Agent Login** (local auth wiring, mock auth).
+From `AGENTS.md`: **§ Build & Validation** (versions, commands, compose targets; missing: name it and stop, never guess), **§ Code Layout & Tech Stack**, **§ Agent Login** (local/mock auth).
 
-Modes: local development; Docker Compose (infrastructure in containers, app on the host unless `AGENTS.md` says otherwise); CI. Ask which if unclear.
+Modes: local; Docker Compose (container infrastructure, host app unless documented otherwise); CI. Ask if unclear.
 
 ## Local Development
 
-1. **Toolchain.** Verify presence and version of each tool § Build & Validation names. Missing tools are environment gaps, not code failures.
-2. **Infrastructure.** Start backing services with the compose command or target § Build & Validation names. Reset the local database only when explicitly needed (`docker compose down -v`, then restart).
-3. **Restore, build, test** each layer with exactly the commands § Build & Validation lists, from the directories it specifies; skip undefined targets.
+1. **Toolchain.** Verify every documented tool/version. Missing tools are environment gaps, not code failures.
+2. **Infrastructure.** Start backing services with documented compose commands/targets. Reset local DB only when explicitly needed (`docker compose down -v`, then restart).
+3. **Restore, build, test** each layer using exact § Build & Validation commands/directories; skip undefined targets.
 4. **Run** with the documented run command.
 
 ## Rules
 
-- Host-to-container connections use `127.0.0.1`, not `localhost`; container-to-container use compose service names. `AGENTS.md` may override explicitly.
-- Never commit secrets (`.env`, credentials, API keys, user overrides); example config stays non-secret. Production secrets come from CI/CD secrets or external secret management, never source-controlled files. Secrets found in config: stop, rotate if real, replace with placeholders before continuing.
-- Mock auth: enable only where § Agent Login says, only with the runtime set to development, never in staging or production config. No mock auth documented: configure the real provider per that section.
-- Package restore failing on PATH, versions, or sandbox network is an environment issue, not a code failure; say so.
+- Host-to-container: `127.0.0.1`, not `localhost`; container-to-container: compose service names. Only explicit `AGENTS.md` overrides.
+- Never commit secrets (`.env`, credentials, API keys, user overrides); examples stay non-secret. Production uses CI/CD or external secret management, never source control. Config secrets: stop, rotate real ones, replace with placeholders before continuing.
+- Mock auth only as § Agent Login documents, runtime development, never staging/production config. Otherwise configure its real provider.
+- Report PATH/version/sandbox-network restore failures as environment issues, not code failures.
 
 ## Verification And Output
 
-Run the minimum § Build & Validation checks (each layer's test/check commands; the full build for a complete setup). Report: mode; tool versions checked; services started; config files changed; validation commands and results; remaining manual steps.
+Run § Build & Validation minimum checks per layer; full build for complete setup. Report mode, verified tool versions, started services, changed configs, validation commands/results, remaining manual steps.

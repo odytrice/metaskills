@@ -1,48 +1,50 @@
 ---
 name: dev-cycle
-description: Run one issue end to end; architect plans (issue-plan), developer implements (issue-implement), a separate architect reviews and merges (code-review), bounded revision loop. Orchestrates only. Use when asked to implement, build, ship, or do an issue.
+description: Orchestrate one issue from plan through implementation, review, and merge. Use when asked to implement, build, ship, or do an issue.
 ---
 
 # Dev Cycle
 
-The unit of delivery for one issue. The coordinator (the user's session, or `burndown` per issue) dispatches each phase to its role and sequences results; it writes no code, posts no plan, transitions no board status, and never merges.
+Coordinator (user session or `burndown` per issue): dispatch and sequence roles; never write code, post plans, transition board status, or merge.
 
 Project facts from `AGENTS.md`: **§ Project Board**, **§ Branch Map**, **§ Build & Validation**, **§ Repositories**. Missing section: name it and stop.
 
+Use `issue-plan` § Board Status Transitions: explicit `board: none` skips board operations, not ledger ownership; missing board facts stop. Deliver fully resolving PRs only, never partial `Refs`.
+
 ## Inputs
 
-A GitHub issue number or URL; the ledger, claim, and `Closes #n` trail all hang off it. A direct request with no issue: raise one first via `issue-raise`, then run the cycle. Optionally, from a batch coordinator: an owned file/module scope and batch validation requirements.
+GitHub issue number/URL anchors ledger, claim, and `Closes #n`. No issue: run `issue-raise` first. Batch coordinator may supply owned file/module scope and validation requirements.
 
 ## Phases
 
 | Phase | Role | Skill | Skipped when |
 |---|---|---|---|
 | 1. Plan | `architect` | `issue-plan` | the user explicitly asked to resume an already-planned issue |
-| 2. Implement | `developer` | `issue-implement` | never |
+| 2. Implement | `developer` | `issue-implement` | explicit resume with an existing delivery PR goes to review |
 | 3. Review + merge | `architect`, distinct from phase 2 | `code-review` (PR mode) | never |
 | 4. Revise | `developer`, then a fresh `architect` | `issue-implement` § Revision Round, `code-review` § Re-review | the review was clean |
 
-- Each phase runs in a fresh context with a narrow prompt: issue number and URL plus the facts that phase needs; nothing inherited from the conversation.
-- Planning is never skipped for being "trivial". Whether a change is simple is only known after the architect has looked; the plan is the cheapest place to find that a small change has wide consequences, and it keeps review from becoming a design discussion across rounds. The soft gate keeps the cost to one dispatch.
-- Accept a phase's result before starting the next: check it against what was asked; stop rather than forward something that does not add up.
+- Fresh context per phase: issue number/URL and needed facts only, no inherited conversation.
+- Never skip planning as "trivial"; the architect establishes scope before implementation/review. The soft gate avoids unnecessary round trips.
+- Validate each result against its request before dispatching the next; inconsistencies stop.
 
 ## Phase Prompts
 
 ```text
-Plan:    Run issue-plan on issue <number> (<url>). Return the plan comment link, approach, task count, blockers or decision points.
-Implement: Run issue-implement on issue <number> (<url>). [Owned scope: <files/modules>.] Validation: <from § Build & Validation>. Return the PR URL, changed paths, ledger state, validation output, risks.
-Review:  Run code-review in PR mode on PR <number>, round <n>. Merge if and only if the criteria hold, then the after-merge steps. Return assessment, comment URL, merge result or blocking criterion, board transition, cleanup.
-Revise:  Run issue-implement § Revision Round on PR <number> (issue <n>). Findings from <review comment URL>: <enumerated>. Validation: <...>. Return commits, findings fixed, findings contested with reasoning, validation output.
+Plan: Run issue-plan on issue <number> (<url>). Return ledger link, approach, task count, blockers/decisions.
+Implement: Run issue-implement initial mode on issue <number> (<url>). Claim/resume evidence; ledger REST id/link: <...>. [Owned scope: <files/modules>.] Validation: <§ Build & Validation>. Return PR URL, paths, ledger state, validation output, risks.
+Review: Run code-review PR mode on PR <number>, round <n>. Merge iff criteria hold; perform after-merge steps. Return assessment, comment URL, merge/blocker, board transition, cleanup.
+Revise: Run issue-implement revision mode on PR <number> (issue <n>, <url>). Current-cycle ownership; ledger REST id/link: <...>. Findings from <review comment URL>: <enumerated>. Validation: <...>. Return commits, fixed/contested findings with reasoning, validation output.
 ```
 
 ## Flow
 
-1. Load the issue (`gh issue view <n> --json number,title,body,state,url,comments`), board status, and whether a ledger exists (first comment line `<!-- plan-ledger -->`). Backlog/unrefined: route through `issue-refine`. In progress, in review, or done: stop and report `claimed`; the board cannot distinguish a crashed run from a live one, so resume only on an explicit user instruction, never when dispatched from a batch.
-2. **Plan** (skipped only on explicit resume). Architect returns `claimed`: stop and report it. Decision points returned instead of a ledger: surface them to the user (or return them to the batch coordinator) and stop; never answer design questions on the architect's behalf. Confirm the ledger exists and the status is in-progress.
-3. **Implement.** Accept only a PR URL, a registered closing reference, validation output, and the in-review transition. A blocked result (`## Blockers` filled) sends the plan back to the architect once; if it recurs, stop and report.
-4. **Review**, round 1. Merged: record and finish. Clean but a merge criterion unmet: report why and leave it. Critical/High: revise.
-5. **Revise**, at most two rounds (review rounds 2 and 3). Developer fixes only the enumerated findings; a fresh architect re-reviews pointed at the prior comment. A contested finding ends the loop immediately (human call). Cap or contest: park the PR with round, exit reason, and both positions.
-6. **Report**: issue and PR URLs; plan link and approach; merge commit, or parked (round, reason), or the unmet criterion; verified board status; validation; residual risks; anything incomplete.
+1. Load issue (`gh issue view <n> --repo <repo-slug> --json number,title,body,state,url`), complete board lookup, and all REST ledger comments per `issue-plan`. Closed/done: finished, stop. Existing ledger or in-progress/in-review: `claimed`, stop unless explicitly user-authorized resume, even boardless; batch dispatch is not authorization. Backlog/unrefined: `issue-refine`. Authorized resume with delivery PR goes to review, not initial implementation: first verify unique ledger, open PR identity, exact intended closing reference, and in-review or `board: none`. In-review without matching PR blocks.
+2. **Plan**, unless explicit resume. `claimed`: report/stop. Decisions instead of ledger: return to user/batch coordinator and stop, never answer for the architect. Confirm unique ledger and in-progress or `board: none`; retain claim/resume evidence and ledger REST id/link for handoffs.
+3. **Implement.** Require fully resolving PR URL, exact closing-reference verification per `issue-implement`, validation output, and verified in-review or `board: none`. Blocked: return ledger once to architect in `issue-plan` same-cycle blocked-plan repair mode, with ownership evidence/blockers. Continue only after ledger blockers clear; decisions or repeated blocker stop, never generic auto-resume.
+4. **Review**, round 1. Merged: finish. Critical/High: revise. Otherwise any unmet merge criterion, including important Medium findings: report the blocker and leave the PR open for the user.
+5. **Revise**, at most twice (review rounds 2/3). Developer fixes enumerated findings only; fresh architect re-reviews against prior comment. Contest ends loop immediately for human decision. Cap/contest: park PR with round, exit reason, both positions.
+6. **Report**: issue/PR URLs, ledger link/approach, merge commit or parked round/reason or unmet criterion, verified board status, validation, residual risks, incomplete work.
 
 ## Without Subagents
 

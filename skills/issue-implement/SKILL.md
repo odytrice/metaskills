@@ -1,32 +1,34 @@
 ---
 name: issue-implement
-description: Implement a planned, claimed issue from its plan ledger to a PR in an isolated worktree; also revision rounds on an existing PR. Developer-only; phase 2 of dev-cycle. Requires a plan ledger.
+description: Implement a claimed plan ledger in an isolated worktree. Use for initial PR delivery or authorized review revisions.
 ---
 
 # Implement Issue
 
-Execute the plan ledger an architect posted via `issue-plan`; do not plan, review, or merge. Normally dispatched by `dev-cycle`.
+Developer-only, normally dispatched by `dev-cycle`: execute the architect's `issue-plan` ledger; never plan, review, or merge.
 
 Project facts from `AGENTS.md`: **§ Branch Map** (base branch; never assume `main`), **§ Build & Validation** (commands, DB tripwire files, commit convention), **§ Project Board**, **§ Repositories**, **§ Code Layout & Tech Stack** (conventions, migration convention, build-order registration). Missing section: name it and stop.
 
 ## Preconditions (stop and report if any fails)
 
-- A plan-ledger comment exists (first line `<!-- plan-ledger -->`). None: report "unplanned"; never create one.
-- Board status is in-progress (or § Project Board is `none`). Ready: not claimed. In review / done: owned or finished. Never transition the claim yourself.
+- Ledger first line is `<!-- plan-ledger -->`. Missing: report `unplanned`; never create one.
+- Explicit mode: **initial** implements the plan and opens a PR; **revision** fixes enumerated findings on the existing PR. PR number alone does not authorize revision.
+- Initial requires in-progress. Revision requires in-review, open/unmerged PR, and repo/issue/branch matching the ledger and review comment. Explicit `board: none` skips board operations per `issue-plan`; missing board facts stop. Ready is unclaimed; done/closed is finished. Never claim yourself.
+- Require current coordinator claim/resume evidence and ledger REST id/link, or explicit user resume authorization. Ledger alone never authorizes attachment, even boardless: stop as `claimed`.
 - `## Blockers` is `_None._`.
 
 ## Rules
 
-- Execute `## Approach` and `## Tasks`. If the approach cannot work or a task is wrong, edit the ledger saying what changed and why before continuing. If the change is a real design decision (competing approaches, migration or backfill, contract or permission change, scope widening), write it in `## Blockers`, stop, and report; that is the architect's.
-- The last 20% (ambiguous requirements, edge cases, integration points) is where damage happens: surface, do not guess.
-- File edit/write tools for edits, never shell here-strings; the harness search tool for searches.
-- You are not alone in the codebase: never revert user or other-agent changes; keep edits inside the issue's (and any given owned) scope; no destructive git commands unless asked.
-- Never commit on a § Branch Map integration branch or the user's working branch; always the dedicated worktree.
-- The deliverable is a PR; local commits are not completion. Remove the local worktree afterward; leave the remote branch.
+- Execute `## Approach`/`## Tasks`. Wrong task or unworkable approach: update the ledger with what/why before continuing. Design decisions (competing approaches, migration/backfill, contract/permission change, scope widening) belong to the architect: record in `## Blockers`, stop, report.
+- Surface ambiguous requirements, edge cases, and integration points; never guess.
+- Use file edit/write tools, not shell here-strings; use harness search tools.
+- Stay within issue/owned scope; never revert others' changes or use destructive git commands unless asked.
+- Commit only in the dedicated worktree, never on integration or user branches.
+- Deliver a PR, not just local commits; remove the worktree afterward, retain the remote branch.
 
 ## Ledger Updates
 
-Check off a task only once implemented, validated, and in the branch. Re-fetch immediately before editing; edit in place by id (mechanics in `issue-plan` § Workflow step 9); never add a second plan comment.
+Check tasks off only when implemented, validated, and in-branch. Re-fetch immediately before editing in place by id per `issue-plan` § Workflow step 9; never add another ledger.
 
 ## Worktree And PR
 
@@ -37,9 +39,9 @@ git fetch origin <base>
 git worktree add -b <branch-name> .worktrees/<branch-name> origin/<base>
 ```
 
-Branch already exists (revision round, resumed run): `git fetch origin <branch-name>` then `git worktree add .worktrees/<branch-name> <branch-name>`.
+Existing branch (authorized revision/resume only): `git fetch origin <branch-name>`, then `git worktree add .worktrees/<branch-name> <branch-name>`. Missing local branch: create tracking the fetched remote. Before revision edits require local tip = current PR `headRefOid`; only fast-forward a clean behind branch. Divergence/unexpected local commits: stop, never reset.
 
-Everything (edits, formatting, tests, commits, PR commands) runs inside the worktree; the original checkout stays untouched. When done:
+Run edits, formatting, tests, commits, and PR commands inside the worktree; leave original checkout untouched. Initial delivery:
 
 ```sh
 git status --short
@@ -49,15 +51,15 @@ git push -u origin <branch-name>
 gh pr create --base <base> --head <branch-name> --title "<title>" --body-file <body-file>
 ```
 
-PR body: what changed and files touched at a high level; validation commands and results (tripwire suite when it applied); board transition; anything not completed or verified; and, as the final line and nowhere else, exactly one ticket reference: `Closes #<n>` (fully resolves) or `Refs #<n>` (partial).
+PR body: high-level changes/paths; validation commands/results including applicable tripwire suite; board transition or `board: none`; unverified items. Final line, nowhere else: exactly one `Closes #<n>` for the intended consuming-repo issue. This skill/`dev-cycle` deliver fully resolving PRs only: incomplete scope means blockers and plan repair/approved split, never partial `Refs` delivery. Unrelated `code-review` PRs are exempt.
 
-Verify the closing link registered; an empty array means the merge will not close the issue. Re-edit until it does:
+Require exactly one registered closing issue with canonical URL equal to the loaded issue URL, including repo identity; nonempty/matching number is insufficient. Wrong/extra/missing references block handoff: correct and re-fetch. If the configured base prevents registration, report the blocker, never loop indefinitely:
 
 ```sh
 gh pr view <number> --json closingIssuesReferences --jq '.closingIssuesReferences'
 ```
 
-Then move the item to in-review (`issue-plan` § Board Status Transitions) and, from the original repo, remove the worktree; before removing, verify the resolved path is inside `.worktrees/` and the worktree is clean, otherwise stop and report.
+Move to in-review per `issue-plan` § Board Status Transitions. From the original repo, remove only a clean worktree whose resolved path is inside its `.worktrees/`; otherwise stop/report:
 
 ```sh
 git worktree remove .worktrees/<branch-name>
@@ -66,22 +68,21 @@ git worktree prune
 
 ## Flow
 
-1. Read the issue, comments, and ledger; check preconditions. `git status --short`; a dirty checkout is left alone.
+1. Read issue and all REST comments/ledger per `issue-plan`; check mode preconditions. `git status --short`; leave dirty checkout alone. Revision: follow § Revision Round, not initial flow below.
 2. Create or attach the worktree.
 3. Locate code via § Code Layout & Tech Stack and `## Touch Points`.
-4. Implement tasks in `## Sequence` order, following the project's layering, error-handling, and state conventions; auth at the boundary; contract mirrors in sync; migration convention and build-order registration. Add or update tests per `## Validation` and whenever behavior changes. Check tasks off as they land. Docs only when part of the behavioral contract or asked; comments sparse.
-5. Validate with § Build & Validation for the layers touched, plus the full build when a change crosses layers. Any DB tripwire file touched: run the live-database suite (or confirm the CI job is green) before the PR.
-6. Commit, push, open the PR, verify the closing link, move to in-review.
-7. No other GitHub writes unless asked; never close issues (the `Closes` link does).
-8. Remove the worktree; add a PR comment with cleanup or final validation if not in the body.
+4. Implement in `## Sequence` order: project layering/error/state conventions, boundary auth, synchronized contract mirrors, migration convention, build-order registration. Test per `## Validation` and for behavior changes; check off per Ledger Updates. Docs only for behavioral contracts or requests; sparse comments.
+5. Run § Build & Validation for touched layers; cross-layer changes require full build. Touched DB tripwire: live-database suite must pass locally or in CI before PR.
+6. Complete § Worktree And PR, including closing-link verification, in-review, and cleanup. Comment cleanup/final validation if absent from body. No other GitHub writes unless asked; never close issues yourself (`Closes` does).
 
 ## Revision Round
 
-Dispatched with a PR number, the review comment URL, and enumerated findings:
+Require explicit revision dispatch: PR number, issue URL, ownership evidence, ledger REST id/link, review comment URL, enumerated findings. Apply revision preconditions, not initial in-progress:
 
-- Attach the existing branch; fix only those findings; no scope widening or surrounding refactors.
-- Re-run the validation the findings touch plus what the PR body listed; commit and push to the same branch; update the ledger if a task's state changed.
-- Disagree with a finding: leave it unfixed, state the reasoning in a PR comment, report it as contested. The dispatcher decides.
+- Attach existing branch; fix only supplied findings, no scope widening or surrounding refactors.
+- Re-run affected validation plus PR-body checks; commit/push same branch; update changed ledger task states.
+- Re-verify exact intended closing reference; retain in-review or report `board: none`. No new PR/re-claim; apply initial cleanup safety checks.
+- Disagreement: leave finding unfixed, explain in a PR comment, report contested; dispatcher decides.
 
 ## Return
 

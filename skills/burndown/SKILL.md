@@ -1,63 +1,64 @@
 ---
 name: burndown
-description: Run dev-cycle across a batch of issues (labels, milestone, issue list, or a board status such as Ready); triage, dependency-ordered waves, one cycle per issue with wave concurrency, closing QA sweep, batch report. Use for a batch; dev-cycle for one issue.
+description: Orchestrate dev-cycle in dependency-ordered batches with closing QA. Use for an issue list, label query, milestone, or board-status batch.
 ---
 
 # Burndown
 
-`dev-cycle` in batches. This skill adds scope, triage, ordering, concurrency, and a closing QA sweep; everything inside an issue (plan, claim, implement, review, revise, merge) is `dev-cycle`, run per issue and recorded, never restated or controlled from here.
+`dev-cycle` owns each issue's plan, claim, implementation, review, revision, and merge. Run and record it per issue; never restate or control its internals here.
 
-Project facts from `AGENTS.md`: **§ Project Board**, **§ Branch Map** (whether merging auto-deploys), **§ Build & Validation**, **§ Code Layout & Tech Stack** (to derive write sets); **§ Environments** and **§ Agent Login** only for the QA sweep (no running app: skip it with a note). Missing section: name it and stop.
+Project facts from `AGENTS.md`: **§ Project Board**, **§ Repositories**, **§ Branch Map** (whether merging auto-deploys), **§ Build & Validation**, **§ Code Layout & Tech Stack** (to derive write sets); **§ Environments** and **§ Agent Login** only for the QA sweep (no running app: skip it with a note). Missing section: name it and stop.
 
 Scope, in precedence: explicit issue list; label query; milestone; a board status the user names; else the board's ready status.
 
+Explicit `board: none` is valid per `issue-plan`: require list/label/milestone scope or ask; skip board operations. Existing ledgers remain claimed, never silently resumed. Missing board facts: stop. Retain canonical issue URLs/repo identity in tracking, prompts, and GitHub commands; reject explicit targets outside the consuming repo.
+
 ## Coordinator Model
 
-The coordinator owns scope, triage, the dependency graph, waves, running the cycles, accepting results, the QA sweep, and the report. It never edits issue bodies or labels, moves board items, pushes, or merges; its only GitHub writes are triage comments (Phase 2). Developers push PR branches, and nothing else leaves the machine unless the user asks.
+The coordinator owns scope, triage, dependencies, waves, cycle dispatch/results, QA, and reporting. Its only GitHub writes are triage comments (Phase 2): no body/label edits, board moves, pushes, or merges. Developers push PR branches; nothing else leaves the machine unless requested.
 
-State lives in two places only: the board Status (shared, per issue) and a tracking table in this conversation (issue; decision; dependencies; write set; wave; PR; review round and exit reason; status). Never write a batch file into the project; a second burndown could not read it, and the board already coordinates.
+State lives only in board Status and a conversation tracking table: issue; decision; dependencies; write set; wave; PR; review round/exit reason; status. Never write project batch files.
 
-Concurrency is bounded by exactly two things: **dependency edges** (an issue waits until everything it depends on is merged) and **write-set overlap** (issues touching the same files, migrations, contracts, routes, state model, or fixtures never run concurrently; when in doubt, serialize). Issues within a wave share no edges; their cycles run side by side and phases may interleave. An issue not in the expected status when its wave opens is skipped and noted. Each issue completes its cycle (merged or parked) before a dependent starts.
+Concurrency has exactly two bounds: **dependency edges** (all prerequisites must merge) and **write-set overlap** (shared files, migrations, contracts, routes, state model, or fixtures serialize; doubt also serializes). Same-wave cycles share no edges and may interleave phases. Skip and note issues outside expected status at wave opening. Parked prerequisites block dependents.
 
 ## Phase 1: Candidates
 
 ```sh
-gh issue list --state open --limit 200 --json number,title,labels,assignees,url
-gh project item-list <project-number> --owner <owner> --format json --limit 200 --jq '.items[] | select(.status=="<ready-status>") | {number:.content.number,title:.title,url:.content.url}'
+gh api --paginate 'repos/<owner>/<repo>/issues?state=open&per_page=100' --jq '.[] | select(.pull_request == null)'
 ```
 
-The board result is only the candidate set; read each issue (`gh issue view --json number,title,body,labels,comments,url`) before triage.
+Apply list/label/milestone filters. Board scope uses `issue-plan` § Board Status Transitions' complete item read, filtered to consuming-repo Issues then requested status. Failed/incomplete enumeration: stop. Before triage, read each candidate by canonical URL (`gh issue view --json number,title,body,labels,comments,url`). Scope number-based `gh` commands with `--repo <repo-slug>`.
 
 ## Phase 2: Triage And Waves
 
-Per issue decide: do now / defer / split / blocked / duplicate. Confirm it still applies; identify dependencies; split oversized issues via `issue-refine` (parent kept, native sub-issues); keep data-integrity, auth, and foundational work early; never silently include items from other columns.
+Decide per issue: do now / defer / split / blocked / duplicate. Confirm relevance and dependencies; split oversized issues via `issue-refine` (retain parent, native sub-issues). Prioritize data-integrity, auth, foundational work; never silently include other columns.
 
-Every decision other than do-now is posted on the issue, where the next reader will see it, as one comment: `gh issue comment <n> --body "Burndown YYYY-MM-DD: deferred|blocked|duplicate of #m|split into #a #b. <reason in one line>"`. Do-now issues get no comment; the plan ledger will carry that.
+Post one comment per non-do-now decision: `gh issue comment <n> --body "Burndown YYYY-MM-DD: deferred|blocked|duplicate of #m|split into #a #b. <reason in one line>"`. Do-now uses the plan ledger, no comment.
 
-Then order: record each kept issue's dependencies and write set (from its scope plus a quick search of the areas it touches); build the graph, adding an edge for any write-set overlap; partition into waves (wave 1 has no unmet edge; each later wave's edges resolve to earlier waves); record in the table. A cycle or unorderable edge is a planning smell: split or ask, never guess. Remaining freedom: order by risk and priority.
+Record kept issues' dependencies and write sets from scope and quick code searches. Add overlap edges; record waves (first: no unmet edges; later: edges resolve to earlier waves). Cycles/unorderable edges: split or ask, never guess. Otherwise order by risk and priority.
 
 ## Phase 3: Run The Cycles
 
 Wave by wave; within a wave, `dev-cycle` for every issue concurrently. A wave opens only when the earlier-wave issues it depends on are merged.
 
-Per issue, follow `dev-cycle` exactly, passing into its prompts the owned files/modules from the write set and the batch validation from § Build & Validation. Record what it returns (PR, approach, merge result, review round and exit reason, board status, validation, changed paths). Then:
+Follow `dev-cycle` exactly; pass owned files/modules and § Build & Validation batch checks. Record returned PR, approach, merge result, review round/exit reason, board status, validation, changed paths. Handle:
 
-- **Decision points** from the architect: record `needs-decision` with the questions, park dependents, continue; put all such questions to the user together at the end of the wave (sooner if the wave cannot progress). Re-run the cycle with the answers in the plan prompt.
+- **Decision points**: record architect questions as `needs-decision`, park dependents, continue. Ask together at wave end (sooner if stalled); re-run with answers in the plan prompt.
 - **Parked PR** (revision cap or contested finding): record round, reason, both positions; park dependents; never re-open the loop from here.
 - **Merge criterion unmet**: record for the user and move on.
-- **`claimed`** (the issue left ready between snapshot and claim, or another architect's ledger won the tie-break): record `claimed-elsewhere`, drop it and its dependents from this batch. Two or more in one wave means another burndown or developer is working the same scope: stop, report which issues, and ask before continuing.
+- **`claimed`** (left ready since snapshot or another architect's ledger won): record `claimed-elsewhere`; drop issue and dependents. Two or more per wave: stop, report overlapping issues, ask before continuing.
 
-Independent work keeps flowing across wave boundaries: an issue is eligible as soon as its prerequisites merge. A parked issue blocks only its dependents.
+Across wave boundaries, issues become eligible as prerequisites merge; parked issues block only dependents.
 
-Before the batch is integrated: run the widest practical § Build & Validation once if per-PR validation did not cover it; confirm no temp files, secrets, debug output, local worktrees, or merged-PR local branches remain.
+Before integration: run the widest practical § Build & Validation if per-PR checks did not cover it; check for secrets/debug output and remove only clean, skill-owned temp files/worktrees. Preserve existing branches and user work; report retained artifacts.
 
 ## Phase 4: QA Sweep
 
 Discovery, not a gate: merged PRs are never reverted; confirmed bugs become backlog work. Skip with a note if nothing merged or there is no running app.
 
-1. Confirm the merged work is live on the QA target (staging by default, never production unless asked). If merging auto-deploys (§ Branch Map), wait for it; otherwise test what is deployed and flag the gap.
-2. Scope: per merged issue, concrete flows from its expected outcome and the PR's changed behavior; plus integration points where two merged changes meet.
-3. Dispatch one `quality-assurance` agent (fresh; not an implementer or reviewer from this batch) with the flow list, merged issue/PR references, and target. It runs `qa`, which files bugs at the new-issue status referencing the merged PR/issue they trace to; note in the prompt that they come from this batch's sweep.
+1. Confirm merged work is live on the target (default staging; production only if asked). Wait for auto-deploy (§ Branch Map); otherwise test deployed behavior and flag gaps.
+2. Scope flows from merged issues' expected outcomes, PR behavior changes, and integration points between changes.
+3. Dispatch one fresh `quality-assurance` agent, neither batch implementer nor reviewer, with flows, merged issue/PR references, target, and batch-sweep context. It runs `qa`, filing at new-issue status with originating PR/issue references.
 4. Record flows tested, bugs filed (URLs), non-reproducible observations, validation limits.
 
 ## Phase 5: Report
