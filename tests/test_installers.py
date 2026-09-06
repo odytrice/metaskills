@@ -202,6 +202,11 @@ class InstallerCases:
         write(self.repo / 'skills/demo/SKILL.md', 'invalid\n')
         self.assert_rejected_read_only()
 
+    def test_crlf_skill_frontmatter(self):
+        write(self.repo / 'skills/demo/SKILL.md',
+              '---\r\nname: demo\r\ndescription: Fixture skill\r\n---\r\nBody\r\n')
+        self.run_installer('check')
+
     def test_bidirectional_wrapper_lint(self):
         (self.repo / 'commands/demo.md').unlink()
         self.assert_rejected_read_only()
