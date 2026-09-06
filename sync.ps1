@@ -35,7 +35,7 @@ function Invoke-Check {
         $skill = Join-Path $dir.FullName 'SKILL.md'
         if (-not (Test-Path $skill)) { Fail "skills/$name has no SKILL.md"; continue }
         $text = Get-Content $skill -Raw
-        if ($text -notmatch "(?m)^name: $([regex]::Escape($name))`$") { Fail "skills/$name/SKILL.md frontmatter name != '$name'" }
+        if ($text -notmatch "(?m)^name: $([regex]::Escape($name))\r?`$") { Fail "skills/$name/SKILL.md frontmatter name != '$name'" }
         if ($text -notmatch '(?m)^description: .') { Fail "skills/$name/SKILL.md has no description" }
         foreach ($md in Get-ChildItem $dir.FullName -Filter '*.md') {
             $rel = "skills/$name/$($md.Name)"

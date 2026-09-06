@@ -33,7 +33,7 @@ check() {
     for dir in "$repo"/skills/*/; do
         dir="${dir%/}"; name="$(basename "$dir")"
         [[ -f "$dir/SKILL.md" ]] || { fail "skills/$name has no SKILL.md"; continue; }
-        grep -q "^name: $name\$" "$dir/SKILL.md" || fail "skills/$name/SKILL.md frontmatter name != '$name'"
+        sed 's/\r$//' "$dir/SKILL.md" | grep -q "^name: $name\$" || fail "skills/$name/SKILL.md frontmatter name != '$name'"
         grep -q '^description: .' "$dir/SKILL.md" || fail "skills/$name/SKILL.md has no description"
         grep -nH '^```powershell' "$dir"/*.md 2>/dev/null | sed "s|^$repo/|FAIL: powershell fence in |" && failures=$((failures + 1))
         grep -nHE '^\s*(Set-Location|Set-Content|Remove-Item|Out-File)\b|gh --%' "$dir"/*.md 2>/dev/null \
