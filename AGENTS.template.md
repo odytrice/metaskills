@@ -23,7 +23,7 @@ Fixed by shared skills, not per-project choices:
   `<!-- plan-ledger -->`.
 - **Worktrees:** root `.worktrees/`; multi-line GitHub body staging: root
   `.tmp-*` files. Both patterns must be in `.gitignore`.
-- **Docs paths:** `weekly-review` writes to `Docs/status/`; workflow details live in `Docs/agents/`.
+- **Docs paths:** `weekly-review` and `project-status` write to `Docs/status/`; workflow details live in `Docs/agents/`.
   Batch state belongs only on the board and issue comments, never in project files.
 - **Ownership:** with a board, claim only ready -> in-progress; with `board: none`, use `issue-plan`'s ledger/tie-break. Existing ledgers still require authorized resume.
 

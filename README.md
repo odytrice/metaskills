@@ -86,7 +86,8 @@ waves, one cycle per issue with wave concurrency, then a closing `qa` sweep
 that files regressions back to `Backlog`. Around that spine: `backlog-refine`
 grooms `Backlog` into `Ready` in dependency-ordered waves after one up-front
 question gate; `qa` is also invocable on its own; `setup` provisions
-environments; `weekly-review` reports.
+environments; `weekly-review` reports; `project-status` maps every not-done
+issue into related groups with a short summary per group.
 
 Core mechanics:
 
