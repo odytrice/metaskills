@@ -44,7 +44,7 @@ For Unix-shell changes, also review `sync.sh` and run when Bash is available:
 
 `--check` / `-Check` verifies skill frontmatter (`name`, `description`), bidirectional skill/command pairing, three-dialect agent body parity, PowerShell-only shell samples, and em/en dashes. Both scripts must report identical findings.
 
-Run `python3 tests/test_installers.py` (or `python` on Windows) for isolated installer regression tests. Unavailable Bash/PowerShell runtimes are skipped, not validated. Installer tests must cover hard-linked metadata as well as symlinks, and byte-sensitive fixtures must avoid platform newline translation. `tests/workflow-scenarios.md` contains manual instruction evaluations, not executable behavioral tests.
+Run `python3 tests/test_installers.py` on Linux (bare or container) for isolated installer regression tests. The suite is Bash-only; Windows and PowerShell coverage were removed, and it skips entirely off Linux. Installer tests must cover hard-linked metadata as well as symlinks, and byte-sensitive fixtures must avoid platform newline translation. `tests/workflow-scenarios.md` contains manual instruction evaluations, not executable behavioral tests.
 
 Read changed skills/agents to verify the project-fact contract and layout invariants above; lint alone does not validate behavior.
 
