@@ -27,7 +27,7 @@ Concurrency has exactly two bounds: **dependency edges** (all prerequisites must
 gh api --paginate 'repos/<owner>/<repo>/issues?state=open&per_page=100' --jq '.[] | select(.pull_request == null)'
 ```
 
-Apply list/label/milestone filters. Board scope uses `issue-plan` § Board Status Transitions' complete item read, filtered to consuming-repo Issues then requested status. Failed/incomplete enumeration: stop. Before triage, read each candidate by canonical URL (`gh issue view --json number,title,body,labels,comments,url`). Scope number-based `gh` commands with `--repo <repo-slug>`.
+Apply list/label/milestone filters. Board scope uses `issue-plan` § Board Status Transitions' complete item read, filtered to consuming-repo Issues then requested status. Failed/incomplete enumeration: stop. GitHub GraphQL secondary rate limits are likely under parallel dispatch: stagger board reads across waves, and when throttled prefer `gh api graphql` with the same field and option IDs, or REST verification (for example paginated issue comments), over blocking the wave. Send each intended transition once, record any unverified move honestly, and re-verify after the limit resets. Before triage, read each candidate by canonical URL (`gh issue view --json number,title,body,labels,comments,url`). Scope number-based `gh` commands with `--repo <repo-slug>`.
 
 ## Phase 2: Triage And Waves
 
