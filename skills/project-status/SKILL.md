@@ -7,7 +7,7 @@ description: Group every not-done issue by how the items relate and summarize ea
 
 Read-only analysis: no issue, label, board, or code writes. Report in the conversation; write `Docs/status/YYYY-MM-DD-project-status.md` only when the user asks for a file.
 
-From `AGENTS.md`: **§ Project Overview** (product areas), **§ Code Layout & Tech Stack** (subsystems), **§ Repositories** (app repo), **§ Project Board** (status names, which option is done). Explicit `board: none`: open issues are the population and status is not reported. Missing/incomplete facts or sections: name them and stop.
+From `AGENTS.md`: **§ Project Overview** (product areas), **§ Code Layout & Tech Stack** (subsystems), **§ Repositories** (app repo), **§ Project Board** (owner/org, project number, status names, which option is done). Explicit `board: none`: open issues are the population, status is not reported, and no board link is shown. Missing/incomplete facts or sections: name them and stop.
 
 ## Process
 
@@ -35,6 +35,7 @@ From `AGENTS.md`: **§ Project Overview** (product areas), **§ Code Layout & Te
 
    ```md
    # Project Status - YYYY-MM-DD
+   Board: https://github.com/orgs/<org>/projects/<n>  (omit this line when board: none)
    ## Summary
    Totals: items, groups, standalone, anomalies. One-paragraph landscape.
    ## <Group name> (n items)
@@ -48,4 +49,4 @@ From `AGENTS.md`: **§ Project Overview** (product areas), **§ Code Layout & Te
    Groups worth `backlog-refine` or `burndown`, in dependency order.
    ```
 
-Link every issue; counts are complete reads, never estimates. No secrets/token values. Recommendations only: never close, relabel, merge, or transition anything.
+Link every issue; counts are complete reads, never estimates. The board link derives from § Project Board's owner and number: `https://github.com/orgs/<owner>/projects/<number>` for an org, `https://github.com/users/<owner>/projects/<number>` for a user. No secrets/token values. Recommendations only: never close, relabel, merge, or transition anything.
