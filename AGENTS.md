@@ -14,8 +14,9 @@ Canonical skills are project-agnostic: resolve facts from the consuming project'
 - `AGENTS.template.md`: required consuming-project contract.
 - `sync.ps1`, `sync.sh`: managed harness installers.
 - `.opencode/skills/`: OpenCode-only repository maintenance. Mirror into `skills/` only if behavior should install globally.
+- `skills/paper-doc/`: portable document-generation skill with HTML/CSS/JavaScript assets, a native SVG C4 viewer, a Python scaffold, and authoring references. Its paired wrapper is `commands/paper-doc.md`.
 
-Mostly Markdown, TOML, PowerShell, and Bash. Keep changes small, explicit, and portable across Windows/Unix.
+Mostly Markdown, TOML, PowerShell, and Bash, plus the `paper-doc` browser assets and Python scaffold. Keep changes small, explicit, and portable across Windows/Unix.
 
 Update affected surfaces together:
 
@@ -45,6 +46,15 @@ For Unix-shell changes, also review `sync.sh` and run when Bash is available:
 `--check` / `-Check` verifies skill frontmatter (`name`, `description`), bidirectional skill/command pairing, three-dialect agent body parity, PowerShell-only shell samples, and em/en dashes. Both scripts must report identical findings.
 
 Run `python3 tests/test_installers.py` on Linux (bare or container) for isolated installer regression tests. The suite is Bash-only; Windows and PowerShell coverage were removed, and it skips entirely off Linux. Installer tests must cover hard-linked metadata as well as symlinks, and byte-sensitive fixtures must avoid platform newline translation. `tests/workflow-scenarios.md` contains manual instruction evaluations, not executable behavioral tests.
+
+For `paper-doc` scaffold or viewer changes, run the dependency-free regressions (Python 3.10+, Node.js 18+):
+
+```text
+python tests/test_paper_doc_scaffold.py
+node --test tests/test_paper_doc_c4.cjs
+```
+
+Open `skills/paper-doc/assets/template/index.html` directly using a file URL for browser verification. Check relevant interactions, desktop/mobile layout, and console errors when assets change; use `skills/paper-doc/references/c4.md` for the diagram contract. Generated documents must remain compatible with direct file opening. Both sync scripts discover the skill directory and paired command automatically and copy all bundled assets.
 
 Read changed skills/agents to verify the project-fact contract and layout invariants above; lint alone does not validate behavior.
 

@@ -32,3 +32,19 @@ These are manual, scenario-based evaluations of agent instructions, not executab
 | Project-manager in each dialect | Same prose: local shell read-only, file writes only Docs/ and temp bodies, GitHub writes only as skill-authorized and approved. Existing tools/permissions/sandbox remain unchanged. |
 
 Residual concurrency limit: board transitions and ledger edits are not atomic locks or compare-and-swap updates. Re-fetching and the creation tie-break reduce races but cannot eliminate all simultaneous claimant/editor races; ambiguous ownership must stop rather than overwrite.
+
+## Paper Doc authoring
+
+Use `skills/paper-doc/evals/evals.json` for complete sample prompts. These cases
+evaluate the authoring instructions; the scaffold and C4 regression suites
+exercise the bundled code separately.
+
+| Scenario / Fixture | Expected Actions |
+|---|---|
+| Architecture guide from source code or an explicitly fictional brief | Read the relevant sources, preserve factual status, use one shared model for C1/C2/C3, and label illustrative or proposed architecture. Verify navigation, inspectors, flows, and the textual summary. |
+| Specification without an architectural question | Use the spec structure, explain requirements and tradeoffs, and provide observable acceptance criteria. Omit C4 scripts and controls when no diagram is needed. |
+| Short summary with incomplete evidence | Preserve supplied counts and uncertainty. State the bottom line without inventing an approval, deadline, or outcome; keep the document concise. |
+| Explicit request to edit an existing Markdown, Word, or Google document | Preserve the requested format instead of silently substituting an HTML deliverable. |
+| Nonempty output directory | Scaffold refuses to overwrite existing work. Choose another destination or clarify the intended edit. |
+| Offline browser or JavaScript disabled | Local content remains readable, fonts fall back gracefully, and the prose architecture summary communicates without the explorer. Do not claim exact offline font parity without bundled fonts. |
+| Delivery after authoring | Replace starter copy and fictional examples, check desktop/mobile and print behavior, and return the actual output path/file URL with any remaining source gaps. |

@@ -1,0 +1,23 @@
+{
+  "skill_name": "paper-doc",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Use paper-doc to make a local architecture guide for a fictional report service. An analyst uploads a CSV in a browser, an API stores a queued job in PostgreSQL, a worker generates the report, and an external mail provider sends a completion email. Show C1, C2, a focused worker C3, and one runtime flow. Label the whole design illustrative. Keep it compatible with direct file opening.",
+      "expected_output": "Paper-and-ink HTML folder with truthful illustrative labels, a shared model, working drill-down/inspector/flow controls, titled and keyed views, and sources or assumptions.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Create a paper-doc spec for adding idempotency keys to a POST /reports endpoint. Clients may retry after a timeout. The proposal is to store a request hash and outcome by tenant plus key for 24 hours; mismatched reuse returns 409. Explain requirements, tradeoffs, acceptance criteria, and unresolved choices. No architecture diagram is needed.",
+      "expected_output": "Source-faithful spec with an editorial masthead, readable code/contract examples and tradeoff table, no invented production claims, and no unused diagram controls or dependencies.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Make a short paper-doc summary in the same style as the IcePanel prep page: the pilot ran for 14 days with 18 participants, 12 completed onboarding, 4 reported confusing labels, and the team has not yet decided whether to expand. The takeaway should make that uncertainty clear. Use no diagrams and keep it readable on a phone and in print.",
+      "expected_output": "Compact paper-themed brief with correct counts, a clear bottom line, explicitly undecided expansion, responsive columns, and print-safe content.",
+      "files": []
+    }
+  ]
+}

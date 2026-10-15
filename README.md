@@ -50,6 +50,7 @@ own copy (e.g. a project-specific `agent-login` that the project's
 
 ```
 skills/        one directory per skill (SKILL.md + supporting files)
+  paper-doc/   document theme, HTML specimen, C4 viewer, and Python scaffold
 commands/      thin slash-command wrappers (shared text)
 agents/
   opencode/    mode/permission frontmatter dialect (.md)
@@ -58,7 +59,7 @@ agents/
 AGENTS.template.md   the per-project AGENTS.md contract
 sync.ps1       installs everything into ~/.claude, ~/.config/opencode, ~/.codex
 sync.sh        same installer for macOS/Linux
-tests/         isolated installer tests and manual workflow scenarios
+tests/         installer and document regressions, plus manual workflow scenarios
 .opencode/skills/    repo-local maintenance skills (not installed)
 ```
 
@@ -88,6 +89,11 @@ grooms `Backlog` into `Ready` in dependency-ordered waves after one up-front
 question gate; `qa` is also invocable on its own; `setup` provisions
 environments; `weekly-review` reports; `project-status` maps every not-done
 issue into related groups with a short summary per group.
+
+For document authoring, [`paper-doc`](skills/paper-doc/SKILL.md) turns source
+material into standalone HTML documentation, specs, reports, and summaries.
+It can explain an issue's design or a project's architecture without requiring
+the issue-delivery lifecycle. Its detailed usage is below.
 
 Core mechanics:
 
@@ -132,6 +138,80 @@ Core mechanics:
 - **Harness feedback**: recurring review findings become proposed amendments
   to AGENTS.md or the skills; the harness is designed to compound.
 
+## Paper-and-ink documents
+
+[`paper-doc`](skills/paper-doc/SKILL.md) creates portable HTML documentation,
+specs, reports, RFCs, architecture guides, and summaries using the paper-and-ink
+aesthetic extracted from the IcePanel prep brief. The bundled design includes
+warm textured paper, Newsreader headings, Inter body text, JetBrains Mono labels,
+ruled sections, red accents, and responsive layouts.
+
+### Use the skill
+
+After [installing](#install), invoke `paper-doc` in your harness. In Claude Code
+and opencode, examples are:
+
+```text
+/paper-doc Document this project's architecture with C1, C2, and a focused C3 view.
+/paper-doc Turn this proposal into a spec with requirements, tradeoffs, and acceptance criteria.
+/paper-doc Summarize these findings as a short paper-and-ink brief, without diagrams.
+```
+
+The skill reads the supplied sources and consuming-project guidance, selects a
+document structure, authors the content, and verifies the actual HTML output.
+Open the [visual specimen](skills/paper-doc/assets/template/index.html) directly
+from a local checkout to preview the components and fictional example model.
+
+### Scaffold directly
+
+The scaffold uses Python 3.10+ and its standard library. From this repository:
+
+```text
+python skills/paper-doc/scripts/scaffold.py <output-dir> --title "Architecture guide" --kind documentation --c4
+python skills/paper-doc/scripts/scaffold.py <output-dir> --title "API proposal" --kind spec
+python skills/paper-doc/scripts/scaffold.py <output-dir> --title "Decision brief" --kind summary
+```
+
+Use `python3` where that is the interpreter name. The destination must be empty
+or not yet exist, and its parent must exist. Optional `--subtitle` and `--date`
+set the lede and document date. The scaffold prints the output's `file://` URL.
+
+The output contains `index.html`, `theme.css`, and `document.js`. `--c4` adds
+`c4.css`, `model.js`, `c4.js`, and `c4-ui.js`. The scaffold produces a starter:
+replace its draft prose, metadata, sources, and fictional model before sharing.
+Keep the whole output folder together so relative assets continue to work.
+
+### Components and architecture diagrams
+
+Document behaviors include reading progress, active-section navigation,
+document-scoped checklists, notes visibility, image lightboxes, and print support.
+Native details/summary elements provide expandable explanations.
+
+The optional C4 explorer uses native JavaScript and SVG. It supports C1/C2/C3
+drill-down, inspectors, tag highlighting, supporting systems, relationship
+roll-ups, runtime flows, pan/zoom, fullscreen, and Structurizr DSL export.
+Views are manually laid out. The DSL exports the model and static views, not
+the manual positions or animated flows.
+
+| Reference | Contents |
+|---|---|
+| [Design system](skills/paper-doc/references/design-system.md) | Theme tokens, typography, component markup, responsive and print behavior |
+| [Document recipes](skills/paper-doc/references/document-recipes.md) | Documentation, specification, summary, and ADR outlines |
+| [C4 contract](skills/paper-doc/references/c4.md) | Model schema, layout, flow definitions, JavaScript API, export limits, and browser checks |
+
+### Runtime and installation
+
+Generated documents open directly in a modern browser through a `file://` URL.
+No npm install, build step, or preview server is needed. Google Fonts are the
+only default external requests; offline use falls back to local fonts while
+the content and diagrams continue to work. The runtime respects reduced motion,
+and essential prose remains available with JavaScript disabled.
+
+Both sync scripts discover `skills/paper-doc/` and `commands/paper-doc.md`
+automatically. The complete skill tree is installed into all three harnesses;
+the wrapper goes to opencode commands and Codex prompts. Claude Code invokes
+the skill directly. Managed manifests handle future updates and renames.
+
 ## Install
 
 ```powershell
@@ -158,17 +238,36 @@ For an unmanaged collision, inspect and back up or relocate the conflicting item
 before retrying; the installer does not silently adopt or overwrite it. Run only
 one installer at a time: preflight is not a filesystem lock or rollback mechanism.
 
+After syncing new or renamed skills, restart the running harness so it reloads
+the installed definitions. In particular, quit and restart opencode before
+using a newly installed command.
+
 ## Validation
 
-Run `python3 tests/test_installers.py` (or `python tests/test_installers.py` on
-Windows). The standard-library suite uses temporary repositories and isolated
-home directories, never live agent configuration. It exercises each available
-installer; unavailable Bash or PowerShell runtimes are reported as skips.
-Release validation should exercise both, not treat skipped coverage as passing.
+Run `python3 tests/test_installers.py` on Linux or in a Linux container. The
+standard-library suite uses temporary repositories and isolated home directories,
+never live agent configuration. It exercises the Bash installer and skips
+entirely outside Linux; it does not provide PowerShell installer coverage.
+
+The `paper-doc` regressions run on Windows and Unix without third-party packages
+(Python 3.10+ for scaffolding; Node.js 18+ for the JavaScript tests):
+
+```text
+python tests/test_paper_doc_scaffold.py
+node --test tests/test_paper_doc_c4.cjs
+```
+
+They cover all three document recipes with and without diagrams, HTML escaping,
+local assets and navigation, preservation of existing work, model validation,
+hierarchical relationships, supporting systems, and DSL generation. Browser
+checks for layout and interaction are described in the
+[C4 contract](skills/paper-doc/references/c4.md#verification).
 
 `tests/workflow-scenarios.md` contains manual instruction walkthroughs for
-ownership, recovery, GitHub identity, and merge races. These are evaluation
-fixtures, not automated proof of agent behavior or live GitHub integration.
+ownership, recovery, GitHub identity, merge races, and document authoring.
+`skills/paper-doc/evals/evals.json` provides three representative authoring
+prompts. These are evaluation fixtures, not automated proof of agent behavior
+or live GitHub integration.
 
 ## Adopting a project
 

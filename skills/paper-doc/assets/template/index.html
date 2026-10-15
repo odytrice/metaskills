@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paper Doc · Paper and ink</title>
+  <meta name="description" content="A paper-and-ink technical documentation specimen with an interactive C4 model.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="c4.css">
+  <script defer src="document.js"></script>
+  <script defer src="model.js"></script>
+  <script defer src="c4.js"></script>
+  <script defer src="c4-ui.js"></script>
+</head>
+<body data-doc-id="paper-doc-specimen">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <nav class="nav" aria-label="Document sections">
+    <div class="wrap">
+      <div class="brand">The Brief <em>· Paper Doc</em></div>
+      <div class="nav-links">
+        <a href="#overview">Overview</a><a href="#decisions">Decisions</a><a href="#architecture">Architecture</a><a href="#delivery">Delivery</a><a href="#references">References</a>
+      </div>
+      <button class="btn sm" data-notes-toggle aria-pressed="false">Hide notes</button>
+    </div>
+    <div class="progress" data-progress aria-hidden="true"></div>
+  </nav>
+  <header class="hero" id="top">
+    <div class="wrap">
+      <div class="mast-top"><span id="doc-kind">Technical documentation · Vol. 1</span><span id="doc-date">Design specimen</span><span id="doc-status">Illustrative</span></div>
+      <div class="mast-title">
+        <div class="kick">A field guide to clear technical writing</div>
+        <h1 id="doc-title">Systems, <i>explained.</i></h1>
+        <p class="lede" id="doc-lede">A readable brief, a precise model, and the decisions that connect them. Warm paper, fine rules, and room for the details that matter.</p>
+      </div>
+      <div class="mast-grid">
+        <div>
+          <ul class="facts">
+            <li><span class="k">Purpose</span><span id="doc-purpose">Documentation, specs, and summaries</span></li>
+            <li><span class="k">Audience</span><span id="doc-audience">People building and reviewing systems</span></li>
+            <li><span class="k">Format</span><span>Portable HTML, open directly in a browser</span></li>
+            <li><span class="k">Status</span><span id="doc-fact-status">Reusable design specimen, fictional model</span></li>
+          </ul>
+        </div>
+        <div class="agenda" id="doc-outline">
+          <div class="stage"><div class="roman">I.</div><h3>The brief</h3><p>Start with what the reader needs to know, then show the evidence.</p></div>
+          <div class="stage"><div class="roman">II.</div><h3>The model</h3><p>Move from system context to runtime boundaries and components.</p></div>
+          <div class="stage"><div class="roman">III.</div><h3>The decision</h3><p>Keep the rationale, consequences, and open questions together.</p></div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main id="main">
+    <section class="s" id="overview">
+      <div class="wrap">
+        <div class="eyebrow"><span class="n">1</span>Start here</div>
+        <h2>Clarity before completeness</h2>
+        <p class="sub">The document should work at two speeds: a quick read for the decision, and a closer read for the implementation.</p>
+        <div class="grid g3">
+          <article class="card glow reveal"><span class="badge ice tag">Orient</span><h3>Say what matters</h3><p class="small muted">Name the audience, the problem, and the conclusion. Give the reader a reason to keep going.</p></article>
+          <article class="card o reveal"><span class="badge o tag">Explain</span><h3>Make the boundaries visible</h3><p class="small muted">A diagram is a view of a model. Give every box a responsibility and every arrow an intention.</p></article>
+          <article class="card reveal"><span class="badge mint tag">Ground</span><h3>Keep the evidence close</h3><p class="small muted">Distinguish current behavior, proposals, and examples. Cite the source instead of decorating an assumption.</p></article>
+        </div>
+        <div class="grid g2 mt">
+          <div class="prose"><h3>A page that reads like a document</h3><p>Use editorial hierarchy to make dense information approachable. Serif headings set the pace; clear body text carries the explanation; monospaced labels hold the metadata.</p><p><mark>Keep the conclusion in the prose.</mark> Controls, diagrams, and expandable details support it.</p></div>
+          <aside class="script doc-note"><span class="who">Author's note</span>This is a component specimen. Its report-service architecture is fictional. Replace the example content and model before presenting it as documentation for a real system.</aside>
+        </div>
+      </div>
+    </section>
+    <section class="s" id="decisions">
+      <div class="wrap">
+        <div class="eyebrow"><span class="n">2</span>Reasoning</div>
+        <h2>Record the tradeoff</h2>
+        <p class="sub">A compact decision table makes the chosen approach and its cost visible in the same place.</p>
+        <div class="table-scroll">
+          <table class="t">
+            <caption>Illustrative choices for a report-generation service</caption>
+            <thead><tr><th scope="col">Decision</th><th scope="col">Rationale</th><th scope="col">Consequence</th></tr></thead>
+            <tbody>
+              <tr><td>Queue long-running work</td><td>An HTTP request need not wait for report generation.</td><td>Expose job status and specify retry semantics.</td></tr>
+              <tr><td>Keep a durable job record</td><td>The system can recover after a worker stops.</td><td>Claims and completion writes need a consistency policy.</td></tr>
+              <tr><td>Start with polling</td><td>The browser can retrieve status through the existing API.</td><td>Choose a polling interval and account for request volume.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <blockquote class="quote mt">Explain what the choice makes easier, and what it makes harder.</blockquote>
+        <div class="grid g2 mt">
+          <article class="card"><h3>A concrete contract</h3><pre><code>POST /reports
+Content-Type: application/json
+
+{ "datasetId": "sample-123" }
+
+202 Accepted
+{ "jobId": "job-456", "status": "queued" }</code></pre><p class="small muted">Example only. Replace with the actual API contract.</p></article>
+          <div><h3>Open questions</h3><details class="qa"><summary>What happens after a worker crashes?</summary><div class="a">A real specification must define claim expiry, retries, and how duplicate side effects are prevented. The sample model does not prove those guarantees.</div></details><details class="qa"><summary>How long are source datasets retained?</summary><div class="a">Retention is intentionally unspecified in this illustrative model. A production document should cite the agreed policy.</div></details></div>
+        </div>
+      </div>
+    </section>
+    <!-- C4-SECTION-START -->
+    <section class="s" id="architecture">
+      <div class="wrap">
+        <div class="eyebrow"><span class="n">3</span>Interactive model</div>
+        <h2>One model, several views</h2>
+        <p class="sub">A fictional report service demonstrates the explorer. Inspect a box for its responsibility, then zoom from C1 to C2 and into the worker's C3. Play the flow to follow one report through the system.</p>
+        <div data-c4="example" data-view="context"><p class="card">The interactive model loads with JavaScript. The architecture summary below remains available without it.</p></div>
+        <p class="small muted mt">Illustrative architecture. The browser submits a dataset to the API. The API stores a queued job in PostgreSQL. A worker generates the report and asks an external mail provider to send a completion notification.</p>
+      </div>
+    </section>
+    <!-- C4-SECTION-END -->
+    <section class="s" id="delivery">
+      <div class="wrap">
+        <div class="eyebrow"><span class="n">4</span>Put it to work</div>
+        <h2>From explanation to action</h2>
+        <p class="sub">Checklists and timelines are useful when they capture real completion criteria. Keep them short enough to act on.</p>
+        <div class="grid g2">
+          <article class="card ok reveal"><h3>Before sharing</h3><label class="check"><input type="checkbox" data-check="sources"><span>Verify technical claims against the source material.</span></label><label class="check"><input type="checkbox" data-check="boundaries"><span>Check diagram scope, responsibilities, and relationship labels.</span></label><label class="check"><input type="checkbox" data-check="responsive"><span>Review the page on a narrow screen and in print.</span></label><label class="check"><input type="checkbox" data-check="examples"><span>Replace every fictional example with the intended content.</span></label></article>
+          <article class="card reveal"><h3>A small authoring loop</h3><div class="timeline"><div class="ev"><div class="d">01 · Understand</div>Read the sources and identify the reader's question.</div><div class="ev"><div class="d">02 · Shape</div>Write the conclusion and arrange the supporting sections.</div><div class="ev"><div class="d">03 · Model</div>Add only the views and flows that explain the system.</div><div class="ev hot"><div class="d">04 · Verify</div>Open the actual output and test what a reader will use.</div></div></article>
+        </div>
+      </div>
+    </section>
+    <section class="s" id="references">
+      <div class="wrap">
+        <div class="eyebrow"><span class="n">5</span>Evidence and reuse</div>
+        <h2>Keep the source in view</h2>
+        <div class="prose"><p>The architecture in this specimen is fictional. Its purpose is to demonstrate the theme and the model-driven explorer. It makes no claim about any company's deployed infrastructure.</p><ol><li><a href="https://c4model.com/">The C4 model</a>: abstraction levels and diagram guidance.</li><li><a href="https://docs.structurizr.com/dsl">Structurizr DSL</a>: the export format for model elements and static views.</li><li><code>model.js</code>: the local example data used by this page.</li></ol><p class="small muted">Google Fonts enhance the typography when online. The content and diagrams work locally, with fallback fonts when offline.</p></div>
+      </div>
+    </section>
+  </main>
+  <footer><div class="wrap"><b>Paper Doc</b> · Paper, ink, and a clear line of reasoning.<br><span class="small">A reusable design specimen. Keep the whole folder together when sharing.</span></div></footer>
+  <a class="btn toTop" href="#top" aria-label="Back to top">↑</a>
+</body>
+</html>
