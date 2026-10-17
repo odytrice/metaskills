@@ -60,6 +60,7 @@ AGENTS.template.md   the per-project AGENTS.md contract
 sync.ps1       installs everything into ~/.claude, ~/.config/opencode, ~/.codex
 sync.sh        same installer for macOS/Linux
 tests/         installer and document regressions, plus manual workflow scenarios
+docs/          GitHub Pages site: the illustrated workflow guide (not installed)
 .opencode/skills/    repo-local maintenance skills (not installed)
 ```
 
@@ -75,6 +76,13 @@ issue-raise -> issue-refine -> [ dev-cycle ............................... ]
 
 Progress is tracked on the project board as
 `Backlog -> Ready -> In progress -> In review -> Done`.
+
+The [workflow guide](https://odytrice.github.io/metaskills/) walks through
+this lifecycle with diagrams: which skill hands work to which, who owns each
+status move, `dev-cycle` and `burndown` step by step, and the shared rules.
+Its source is `docs/index.html`, a single paper-doc page with the PlantUML
+source of each diagram embedded beside the figure. It describes the skills at
+the commit named in its masthead.
 
 Deployment is out of scope: it means something different in every project,
 so it lives in the consuming repo (its own skill, or `AGENTS.md`), not here.
