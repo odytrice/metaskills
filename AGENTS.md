@@ -15,7 +15,7 @@ Canonical skills are project-agnostic: resolve facts from the consuming project'
 - `sync.ps1`, `sync.sh`: managed harness installers.
 - `.opencode/skills/`: OpenCode-only repository maintenance. Mirror into `skills/` only if behavior should install globally.
 - `skills/paper-doc/`: portable document-generation skill with HTML/CSS/JavaScript assets, a native SVG C4 viewer, a Python scaffold, and authoring references. Its paired wrapper is `commands/paper-doc.md`.
-- `docs/`: GitHub Pages site, published from `master` `/docs`. `index.html` is a self-contained paper-doc workflow guide; each diagram is inline SVG rendered from the PlantUML source embedded beside it. It is pinned to the commit in its masthead. Never installed.
+- `docs/`: GitHub Pages site, published from `master` `/docs`. `index.html` is a self-contained paper-doc workflow guide; each diagram is inline SVG rendered from the PlantUML or draw.io source embedded beside it. It is pinned to the commit in its masthead. Never installed.
 
 Mostly Markdown, TOML, PowerShell, and Bash, plus the `paper-doc` browser assets and Python scaffold. Keep changes small, explicit, and portable across Windows/Unix.
 

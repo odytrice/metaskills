@@ -81,8 +81,8 @@ The [workflow guide](https://odytrice.github.io/metaskills/) walks through
 this lifecycle with diagrams, starting from the four agent roles: who hands
 work to whom, which role owns each status move, how the thirteen skills group,
 `dev-cycle` and `burndown` step by step, and the shared rules.
-Its source is `docs/index.html`, a single paper-doc page with the PlantUML
-source of each diagram embedded beside the figure. It describes the skills at
+Its source is `docs/index.html`, a single paper-doc page with the PlantUML or
+draw.io source of each diagram embedded beside the figure. It describes the skills at
 the commit named in its masthead.
 
 Deployment is out of scope: it means something different in every project,
