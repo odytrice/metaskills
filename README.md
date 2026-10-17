@@ -78,8 +78,8 @@ Progress is tracked on the project board as
 `Backlog -> Ready -> In progress -> In review -> Done`.
 
 The [workflow guide](https://odytrice.github.io/metaskills/) walks through
-this lifecycle with diagrams, starting from the four agent roles: who hands
-work to whom, which role owns each status move, how the thirteen skills group,
+this lifecycle with diagrams, starting from the four agents: who hands work
+to whom, which agent owns each status move, how the thirteen skills group,
 `dev-cycle` and `burndown` step by step, and the shared rules.
 Its source is `docs/index.html`, a single paper-doc page with the PlantUML or
 draw.io source of each diagram embedded beside the figure. It describes the skills at
