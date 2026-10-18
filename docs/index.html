@@ -234,6 +234,11 @@ footer { padding: 40px 0 70px; color: var(--ink2); font-size: 13.5px; border-top
 /* Document-specific: frames for inline PlantUML SVG, a requirement matrix, literal code. */
 code, pre { font-variant-ligatures: none; }
 .hero h1 { text-wrap: balance; }
+.mast-top a { color: inherit; text-decoration-color: var(--rule2); }
+.mast-top a:hover { text-decoration-color: var(--ink2); }
+.facts a { overflow-wrap: anywhere; }
+@media (max-width: 760px) { .brand em { display: none; } }
+@media (max-width: 359px) { .wide-only { display: none; } }
 @media (min-width: 360px) { .hero h1 i { white-space: nowrap; } }
 table.t code { white-space: nowrap; }
 table.t th code { text-transform: none; }
@@ -340,13 +345,14 @@ skinparam LegendFontSize 11
     <div class="wrap">
       <div class="brand">MetaSkills <em>· Workflow guide</em></div>
       <div class="nav-links"><a href="#agents">Agents</a><a href="#lifecycle">Lifecycle</a><a href="#skills">Skills</a><a href="#rules">Rules</a><a href="#one-issue">One issue</a><a href="#batches">Batches</a><a href="#ownership">Ownership</a><a href="#reference">Reference</a><a href="#sources">Sources</a></div>
+      <a class="btn sm repo-link" href="https://github.com/odytrice/metaskills"><span>GitHub<span class="wide-only"> repo</span></span></a>
       <button class="btn sm" data-notes-toggle aria-pressed="false">Hide notes</button>
     </div>
     <div class="progress" data-progress aria-hidden="true"></div>
   </nav>
   <header class="hero" id="top">
     <div class="wrap">
-      <div class="mast-top"><span id="doc-kind">Workflow guide · odytrice/metaskills</span><span id="doc-date">17 October 2026 · master @ b434c9e</span><span id="doc-status">Current behavior</span></div>
+      <div class="mast-top"><span id="doc-kind">Workflow guide · <a href="https://github.com/odytrice/metaskills">odytrice/metaskills</a></span><span id="doc-date">17 October 2026 · master @ b434c9e</span><span id="doc-status">Current behavior</span></div>
       <div class="mast-title">
         <div class="kick">The MetaSkills workflow, from raised issue to merged pull request</div>
         <h1 id="doc-title">The New SDLC, <i>Run by Agents.</i></h1>
@@ -355,6 +361,7 @@ skinparam LegendFontSize 11
       <div class="mast-grid">
         <div>
           <ul class="facts">
+            <li><span class="k">Repository</span><span><a href="https://github.com/odytrice/metaskills">github.com/odytrice/metaskills</a>. Clone it and run <code>.\sync.ps1</code> on Windows or <code>./sync.sh</code> on macOS and Linux to install into all three harnesses.</span></li>
             <li><span class="k">Purpose</span><span id="doc-purpose">Explain who does the work, and how the skills compose into one workflow</span></li>
             <li><span class="k">Audience</span><span id="doc-audience">Anyone running or adopting the MetaSkills harness</span></li>
             <li><span class="k">Source</span><span>The thirteen <code>SKILL.md</code> files and four agent definitions at commit b434c9e</span></li>
@@ -1029,7 +1036,7 @@ b -> b : report claimed; leave the status alone
         <h2>Sources and limits</h2>
         <div class="grid g2">
           <div class="prose">
-            <p>Every statement here was read from the repository at commit b434c9e. Links point at that commit.</p>
+            <p>The project lives at <a href="https://github.com/odytrice/metaskills">github.com/odytrice/metaskills</a>. Every statement here was read from that repository at commit b434c9e, and the links below point at that commit.</p>
             <ol>
               <li><a href="https://github.com/odytrice/metaskills/tree/b434c9ef0d730c9d2d8c14f0bd61b16e8598c606/skills">skills/</a>: the thirteen <code>SKILL.md</code> files, plus <code>code-review/checklist.md</code> and <code>output-format.md</code>.</li>
               <li><a href="https://github.com/odytrice/metaskills/tree/b434c9ef0d730c9d2d8c14f0bd61b16e8598c606/agents">agents/</a>: the four agents in three dialects.</li>
@@ -1053,7 +1060,7 @@ b -> b : report claimed; leave the status alone
       </div>
     </section>
   </main>
-  <footer><div class="wrap"><b>MetaSkills</b> · Workflow guide for odytrice/metaskills at b434c9e.<br><span class="small">One self-contained HTML file: share it on its own. Generated with paper-doc on 17 October 2026.</span></div></footer>
+  <footer><div class="wrap"><b>MetaSkills</b> · Workflow guide for <a href="https://github.com/odytrice/metaskills">odytrice/metaskills</a> at b434c9e.<br><span class="small">One self-contained HTML file: share it on its own. Generated with paper-doc on 17 October 2026.</span></div></footer>
   <a class="btn toTop" href="#top" aria-label="Back to top">↑</a>
 <script data-source="document.js">
 /* Optional document behaviors. Core prose is already present in the HTML. */
