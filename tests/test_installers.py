@@ -197,6 +197,24 @@ class InstallerCases:
         write(self.repo / 'skills/demo/SKILL.md', 'invalid\n')
         self.assert_rejected_read_only()
 
+    def test_crlf_skill_frontmatter(self):
+        # Larger than the 64 KiB pipe buffer, so piping into an early-exiting
+        # matcher under pipefail would fail deterministically.
+        text = ('---\r\nname: demo\r\ndescription: Fixture skill\r\n---\r\n'
+                + 'Body line padding the skill past the pipe buffer.\r\n' * 1500)
+        self.assertGreater(len(text.encode('utf-8')), 64 * 1024)
+        write(self.repo / 'skills/demo/SKILL.md', text)
+        self.run_installer('check')
+        self.run_installer()
+        self.assertEqual((self.home / ROOTS[0] / 'demo/SKILL.md').read_bytes(),
+                         text.encode('utf-8'))
+
+    def test_crlf_skill_frontmatter_wrong_name(self):
+        write(self.repo / 'skills/demo/SKILL.md',
+              '---\r\nname: demox\r\ndescription: Fixture skill\r\n---\r\nBody\r\n')
+        self.assertIn("frontmatter name != 'demo'", self.run_installer('check', success=False))
+        self.assert_rejected_read_only()
+
     def test_bidirectional_wrapper_lint(self):
         (self.repo / 'commands/demo.md').unlink()
         self.assert_rejected_read_only()
