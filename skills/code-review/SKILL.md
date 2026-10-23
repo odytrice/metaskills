@@ -18,7 +18,7 @@ PR: explicit `board: none` skips board operations per `issue-plan` § Board Stat
 
 ## PR Mode
 
-Reviewer must differ from implementer. If you authored/substantially edited the change, stop and spawn a reviewer with only PR number/URL, linked issue, validation expectations; never reuse implementation context/worktree. Reviewer alone merges; caller (user, `dev-cycle`, `burndown`) only records results.
+Reviewer must differ from implementer. If you authored/substantially edited the change, stop and spawn a reviewer with only PR number/URL, linked issue, validation expectations; never reuse implementation context/worktree. Apply `dev-cycle` § Subagent Dispatch: foreground by default, background only on explicit user request. Reviewer alone merges; caller (user, `dev-cycle`, `burndown`) only records results.
 
 ### Review Worktree
 

@@ -15,6 +15,8 @@ Explicit `board: none` is valid per `issue-plan`: require list/label/milestone s
 
 ## Coordinator Model
 
+Apply `dev-cycle` § Subagent Dispatch to every dispatch, including nested issue cycles and the closing QA sweep: foreground by default, background only on explicit user request.
+
 The coordinator owns scope, triage, dependencies, waves, cycle dispatch/results, QA, and reporting. Its only GitHub writes are triage comments (Phase 2): no body/label edits, board moves, pushes, or merges. Developers push PR branches; nothing else leaves the machine unless requested.
 
 State lives only in board Status and a conversation tracking table: issue; decision; dependencies; write set; wave; PR; review round/exit reason; status. Never write project batch files.
@@ -39,7 +41,7 @@ Record kept issues' dependencies and write sets from scope and quick code search
 
 ## Phase 3: Run The Cycles
 
-Wave by wave; within a wave, `dev-cycle` for every issue concurrently. A wave opens only when the earlier-wave issues it depends on are merged.
+Wave by wave; within a wave, `dev-cycle` for every issue concurrently where foreground dispatch supports it, otherwise sequentially, unless the user explicitly requested background mode. A wave opens only when the earlier-wave issues it depends on are merged.
 
 Follow `dev-cycle` exactly; pass owned files/modules and § Build & Validation batch checks. Record returned PR, approach, merge result, review round/exit reason, board status, validation, changed paths. Handle:
 

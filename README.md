@@ -106,6 +106,10 @@ the issue-delivery lifecycle. Its detailed usage is below.
 
 Core mechanics:
 
+- **Foreground orchestration**: all subagent dispatches default to foreground;
+  background execution requires an explicit user request, including nested cycles
+  and QA. Independent workers may run concurrently through foreground calls;
+  otherwise they run sequentially. Dispatch mechanics live in `dev-cycle`.
 - **Status-as-lock**: the board Status field is an optimistic claim lock.
   `issue-plan` claims from `Ready`, `issue-implement` moves to `In review`,
   `code-review` handles `Done`; coordinators never transition status. Two

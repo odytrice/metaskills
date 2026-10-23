@@ -13,6 +13,7 @@ Scope: backlog status by default; otherwise issue list, label query, or mileston
 
 ## Rules
 
+- Apply `dev-cycle` § Subagent Dispatch to every worker and re-dispatch: foreground by default, background only on explicit user request. Same-wave concurrency does not imply background permission.
 - Non-interactive workers return questions and already-clear items; the caller holds the user gate and re-dispatches with answers.
 - Mandatory human gate: no fan-out beforehand, refinement with unanswered questions, or invented scope. "Skip", "defer", and "close" are valid answers.
 - Only `issue-refine` moves an item to ready, updates a body, or splits (parent kept, native sub-issues). This skill writes nothing but `.tmp-*` body files.

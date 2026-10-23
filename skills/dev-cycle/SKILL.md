@@ -15,6 +15,12 @@ Use `issue-plan` § Board Status Transitions: explicit `board: none` skips board
 
 GitHub issue number/URL anchors ledger, claim, and `Closes #n`. No issue: run `issue-raise` first. Batch coordinator may supply owned file/module scope and validation requirements.
 
+## Subagent Dispatch
+
+All subagent orchestration defaults to foreground execution: wait for dispatched work to finish and collect its result before continuing dependent work. Use background mode only when the user explicitly requests it; pass that choice through nested coordinators within the requested scope. Set the tool's foreground option explicitly where available (for example, `background: false` or `run_in_background: false`).
+
+Parallel work does not imply background permission. Use concurrent foreground calls when supported; otherwise dispatch sequentially. If the harness only offers asynchronous dispatch, wait for completion before continuing and state that limitation rather than claiming native foreground execution.
+
 ## Phases
 
 | Phase | Role | Skill | Skipped when |
