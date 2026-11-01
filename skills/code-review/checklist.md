@@ -8,6 +8,13 @@ Apply relevant sections only. Stack idioms in `AGENTS.md` § Code Layout & Tech 
 - Covers edge cases, error paths, integration points, not just happy paths.
 - Flags guessed business-logic assumptions.
 
+## Bug fixes
+
+- Fixes the cause the ledger's `## Approach` names, in the component it names; otherwise High.
+- No unplanned retries, fallbacks, special cases, suppressed errors, or new records, flags, or formats around the symptom: Medium.
+- Reproduction test present, asserting the original failure (not weakened), with fail-before and pass-after reported; rerun on base where practical. Missing or weakened: Medium.
+- The plan itself treats the symptom, or a bug without an RCA meets `issue-diagnose` § Criteria: Needs diagnosis (`output-format.md`).
+
 ## Security and access control
 
 - Protected routes/actions authenticate and authorize requesting user/tenant; no cross-tenant reads/writes.

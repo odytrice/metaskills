@@ -42,7 +42,7 @@ One paragraph: scope, behavioral impact, priority-ordered next steps. Local: sta
 ## Assessment
 
 - `Approve`: no Critical/High, no blocking validation failure, remaining observations minor.
-- `Changes requested`: High or important Medium findings to fix before merge/commit.
+- `Changes requested`: High or important Medium findings, or Needs diagnosis, to resolve before merge/commit.
 - `Critical issues found`: any Critical, or a validation failure indicating production breakage.
 
 ## Severity (only these four)
@@ -51,5 +51,7 @@ One paragraph: scope, behavioral impact, priority-ordered next steps. Local: sta
 - **High**: broken core workflow, wrong business logic in a primary feature, authorization regression, migration risk.
 - **Medium**: important edge case, missing test for risky behavior, degraded UX on a primary path.
 - **Low**: maintainability or minor correctness with limited blast radius.
+
+**Needs diagnosis** (`checklist.md` § Bug fixes) is plan-level, outside the severity ladder: state it first under Open Questions with the criteria and evidence; never a developer revision item.
 
 Every finding needs `path:line`; group by severity, not file. No actionable findings: `No critical issues found.` under Findings. Never fabricate elapsed time, actor handles, or job URLs.

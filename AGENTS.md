@@ -1,5 +1,7 @@
 # AGENTS.md - MetaSkills
 
+MetaSkills version: 1.1.0
+
 ## Project Overview
 
 MetaSkills owns the user's canonical shared skills, command wrappers, and agent roles, installed into Claude Code, opencode, and Codex user-level configs.
@@ -11,7 +13,7 @@ Canonical skills are project-agnostic: resolve facts from the consuming project'
 - `skills/<name>/SKILL.md`: canonical skills shared across all three harnesses.
 - `commands/<name>.md`: thin same-named skill + `$ARGUMENTS` handoffs for opencode commands and Codex prompts, never duplicated workflows. Claude Code uses skills directly as slash commands; no wrapper copies.
 - `agents/opencode/*.md`, `agents/claude/*.md`, `agents/codex/*.toml`: subagent/role definitions with identical bodies across dialects; configuration syntax differs.
-- `AGENTS.template.md`: required consuming-project contract.
+- `AGENTS.template.md`: required consuming-project contract, including the MetaSkills version and its change list. Bump minor when projects must update their `AGENTS.md` or issue templates, patch for low-impact changes, major for pride releases.
 - `sync.ps1`, `sync.sh`: managed harness installers.
 - `.opencode/skills/`: OpenCode-only repository maintenance. Mirror into `skills/` only if behavior should install globally.
 - `skills/paper-doc/`: portable document-generation skill with HTML/CSS/JavaScript assets, a native SVG C4 viewer, a Python scaffold, and authoring references. Its paired wrapper is `commands/paper-doc.md`.
@@ -25,6 +27,7 @@ Update affected surfaces together:
 - Roles: all three dialects.
 - Installation: both sync scripts, including added/renamed/removed managed files.
 - Layout, installation, or workflows: `README.md`.
+- Anything projects must change: `AGENTS.template.md` version bump and change entry, plus this file's version line.
 
 ## Build & Validation
 

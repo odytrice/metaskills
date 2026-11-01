@@ -30,6 +30,17 @@ These are manual, scenario-based evaluations of agent instructions, not executab
 | Consuming-project template declares board: none | No lifecycle options or automation metadata required; use ledger ownership/tie-break and explicit-resume safeguards. |
 | Every command wrapper, including QA | Preserve frontmatter and dispatch only to the same-named skill with $ARGUMENTS; no duplicated mode/default/workflow policy. |
 | Project-manager in each dialect | Same prose: local shell read-only, file writes only Docs/ and temp bodies, GitHub writes only as skill-authorized and approved. Existing tools/permissions/sandbox remain unchanged. |
+| Bug whose first "why" lands on an evidenced defect where it shows; no criterion applies | No RCA; issue-plan plans and claims normally. |
+| issue-refine on a bug with an Impact or History signal and no RCA | Conclude needs diagnosis naming the criterion; issue stays in backlog; no ready transition. |
+| issue-plan finds a criterion during exploration; no RCA | Stop before claiming with needs diagnosis; no ledger. dev-cycle runs issue-diagnose, then plans again. |
+| Existing RCA when refine, plan, or diagnose runs | Reuse it. issue-diagnose reports it and edits only on user-requested or cycle-authorized re-diagnosis; never a second RCA. |
+| Concurrent RCA creators | Re-fetch all pages; the later creator deletes only its own RCA and reports the earlier one. |
+| RCA concludes needs refinement | One refinement round under user approval, then plan; a second request stops and reports both. |
+| RCA concludes needs evidence | issue-plan stops at its approval gate asking for the named evidence; no claim. |
+| Bug report or refinement proposal containing a fix | Body keeps only the failure and its evidence; a proposed fix adding machinery triggers Fix shape. |
+| Implementation blocker contradicts the RCA | Architect returns needs diagnosis; re-diagnosis plus ledger repair spend the cycle's single repair; the developer sees only the ledger. |
+| Review finds the plan treats the symptom | Needs diagnosis with Changes requested; re-diagnose, repair, revise with the changed tasks; spends the single repair and one revision round. |
+| Second needs diagnosis, repair already used, or cause and Approach unchanged | Park the PR with both positions; no further loop. |
 
 Residual concurrency limit: board transitions and ledger edits are not atomic locks or compare-and-swap updates. Re-fetching and the creation tie-break reduce races but cannot eliminate all simultaneous claimant/editor races; ambiguous ownership must stop rather than overwrite.
 

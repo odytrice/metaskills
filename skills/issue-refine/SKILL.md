@@ -7,7 +7,7 @@ description: Clarify an issue's scope and acceptance criteria for implementation
 
 Own the **What**; `issue-plan` owns the **How**. No branches, commits, or implementation edits.
 
-Project facts from `AGENTS.md`: **§ Repositories** (issue template), **§ Project Board**, **§ Code Layout & Tech Stack** (feasibility checks only). Missing section: name it and stop.
+Project facts from `AGENTS.md`: **§ Repositories** (issue template), **§ Project Board**, **§ Code Layout & Tech Stack** (feasibility checks only), **§ Review Notes** (critical flows for bugs). Missing section: name it and stop.
 
 Explicit `board: none` is valid per `issue-plan` § Board Status Transitions: skip board operations and report refinement without a status transition. Missing board facts still stop.
 
@@ -27,7 +27,7 @@ Explicit `board: none` is valid per `issue-plan` § Board Status Transitions: sk
    ```
 
 2. Feasibility check (three questions above).
-3. Assess intent, behavior (flow, inputs/outputs, permissions, user-visible failures), boundaries, testable completion, and incoming/outgoing dependencies. Conclude: ready, needs answers, or split.
+3. Assess intent, behavior (flow, inputs/outputs, permissions, user-visible failures), boundaries, testable completion, and incoming/outgoing dependencies. Conclude: ready, needs answers, split, or needs diagnosis (§ Bugs).
 4. Discuss using the Output Shape.
 5. Propose template headings or `## Summary`, `## Context`, `## Expected outcome` (acceptance criteria), `## Notes` (binding constraints). In template task sections, leave a one-line plan-ledger pointer.
 6. After approval, stage in `.tmp-refined-body.md` (file-write tool), apply, re-read, report, delete the file.
@@ -37,6 +37,14 @@ Explicit `board: none` is valid per `issue-plan` § Board Status Transitions: sk
    ```
 
 7. Move to ready per `issue-plan` § Board Status Transitions; report verified status. Split parents stay put; refine/ready children individually.
+
+## Bugs
+
+Bugs and criteria per `issue-diagnose` § Criteria.
+
+- The body carries no fix, including as a `## Notes` constraint; the expected outcome states behavior, not mechanism.
+- No `<!-- root-cause -->` comment and a criterion applies from issue text or history: conclude **needs diagnosis**, name the criterion, leave the issue in backlog. Resume after `issue-diagnose` posts.
+- RCA present: its Proof becomes an acceptance criterion ("the RCA reproduction passes"); apply its Refinement Needed; surface needs-evidence items as Questions.
 
 ## Splitting
 

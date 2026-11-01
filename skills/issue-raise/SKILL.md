@@ -20,7 +20,7 @@ Explicit `board: none` is valid per `issue-plan` § Board Status Transitions: sk
    gh api --paginate repos/OWNER/REPO/labels --jq '.[] | {name, description}'
    ```
 
-4. Use template headings, otherwise `## Summary` (problem/change), `## Context` (background, impacted flow, current behavior, links/logs), `## Expected outcome` (testable success), `## Notes` (assumptions/unknowns/placeholders). Body = What; tasks belong in `issue-plan`'s ledger. In template task sections, leave a one-line ledger pointer. Use a specific, concise title; no unsupported implementation promises.
+4. Use template headings, otherwise `## Summary` (problem/change), `## Context` (background, impacted flow, current behavior, links/logs), `## Expected outcome` (testable success), `## Notes` (assumptions/unknowns/placeholders). Body = What; tasks belong in `issue-plan`'s ledger. In template task sections, leave a one-line ledger pointer. Use a specific, concise title; no unsupported implementation promises. Bugs: title and body describe the failure and its evidence only, assumptions labeled; never a fix, even as a suggestion.
 5. Stage `.tmp-issue-body.md` with a file-write tool; create, then set Type (no create flag); delete the file afterward. Report exact auth/permission/network blockers, never fabricated completion.
 
    ```sh

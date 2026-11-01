@@ -77,6 +77,11 @@ issue-raise -> issue-refine -> [ dev-cycle ............................... ]
 Progress is tracked on the project board as
 `Backlog -> Ready -> In progress -> In review -> Done`.
 
+Bugs that meet `issue-diagnose`'s criteria get a root-cause comment (the Why)
+before planning. `issue-refine`, `issue-plan`, or `code-review` can trigger it;
+the architect diagnoses, and the RCA reaches delivery only through the body
+and the ledger.
+
 The [workflow guide](https://odytrice.github.io/metaskills/) walks through
 this lifecycle with diagrams, starting from the four agents: who hands work
 to whom, which agent owns each status move, how the thirteen skills group,
@@ -128,6 +133,12 @@ Core mechanics:
   validation, risks, and tasks into one living `<!-- plan-ledger -->` comment
   per issue (UTF-8, no BOM), asking for approval only when a real trade-off
   needs the user. `issue-implement` executes that ledger and never creates one.
+- **Why before How for bugs**: `issue-diagnose` writes one living
+  `<!-- root-cause -->` comment (observed failure, evidence-marked why chain,
+  existing responsibility, proof) and never designs the fix. Bug bodies carry
+  no fix. A refinement it requests runs once per RCA; a re-diagnosis during
+  delivery spends the cycle's single plan repair and a revision round, and a
+  repair that changes nothing parks the PR.
 - **Worktree isolation**: implementation and review each run in their own
   `.worktrees/` checkout, with path-safety checks before removal.
 - **Implementer =/= reviewer, reviewer = merger**: reviews always run in a
@@ -147,7 +158,8 @@ Core mechanics:
   Standalone review can handle partial PRs without marking referenced issues done.
 - **Shared mechanics have one owner**: board transitions live in `issue-plan`,
   sub-issue linking in `issue-raise`, review worktrees and merge in
-  `code-review`; other skills reference them instead of restating.
+  `code-review`, RCA criteria in `issue-diagnose`; other skills reference them
+  instead of restating.
 - **Harness feedback**: recurring review findings become proposed amendments
   to AGENTS.md or the skills; the harness is designed to compound.
 
@@ -277,7 +289,8 @@ checks for layout and interaction are described in the
 [C4 contract](skills/paper-doc/references/c4.md#verification).
 
 `tests/workflow-scenarios.md` contains manual instruction walkthroughs for
-ownership, recovery, GitHub identity, merge races, and document authoring.
+ownership, recovery, GitHub identity, merge races, root-cause diagnosis, and
+document authoring.
 `skills/paper-doc/evals/evals.json` provides three representative authoring
 prompts. These are evaluation fixtures, not automated proof of agent behavior
 or live GitHub integration.
@@ -285,8 +298,10 @@ or live GitHub integration.
 ## Adopting a project
 
 1. Write (or restructure) the project's `AGENTS.md` to satisfy every section
-   of `AGENTS.template.md`, including the harness conventions block. Put
-   stack-specific review checks in a detail file `§ Review Notes` points to.
+   of `AGENTS.template.md`, including the harness conventions block and the
+   `MetaSkills version` line. Put stack-specific review checks in a detail
+   file `§ Review Notes` points to. To upgrade later, compare that line with
+   the template's version and apply the listed version changes.
 2. Add `.worktrees/` and `.tmp-*` to the project's `.gitignore`.
 3. For Claude Code, add a `CLAUDE.md` containing `@AGENTS.md`.
 4. Delete the project's local copies of these skills/commands/agents so the

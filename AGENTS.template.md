@@ -12,6 +12,26 @@ For Claude Code, also provide `CLAUDE.md` with first line `@AGENTS.md`.
 summarize workflow-specific detail (Review Notes, Agent Login) and link
 `Docs/agents/` files, which skills must read before acting.
 
+## Version
+
+Copy this line under the project `AGENTS.md` title, set to the version the
+project satisfies:
+
+`MetaSkills version: 1.1.0`
+
+- **Major:** a pride release, bumped at the maintainer's discretion.
+- **Minor:** projects must update their `AGENTS.md` or issue templates.
+- **Patch:** a low-impact change; no project action.
+
+When this template's major or minor is ahead of a project's line, apply each
+newer version's changes below, then update the line.
+
+### Version changes
+
+- **1.1.0:** bug issue templates drop any proposed-fix section. Optional:
+  list critical flows in § Review Notes.
+- **1.0.0:** baseline.
+
 ## Harness conventions the project must accommodate
 
 Fixed by shared skills, not per-project choices:
@@ -21,6 +41,9 @@ Fixed by shared skills, not per-project choices:
   checklists. Approach, touch points, validation, risks, and execution tasks
   belong in exactly one issue comment whose first line is
   `<!-- plan-ledger -->`.
+- **Bugs: the Why comes first.** A bug meeting `issue-diagnose`'s criteria
+  gets one `<!-- root-cause -->` comment before planning. Bug bodies and bug
+  issue templates carry no proposed fix.
 - **Worktrees:** root `.worktrees/`; multi-line GitHub body staging: root
   `.tmp-*` files. Both patterns must be in `.gitignore`.
 - **Docs paths:** `weekly-review` and `project-status` write to `Docs/status/`; workflow details live in `Docs/agents/`.
@@ -98,4 +121,5 @@ local-only mock auth, and stopping rather than inventing credentials.
 Layer project guidance over shared stack-neutral `code-review/checklist.md`:
 idioms, formatting, known-bug interactions, extra checks, and active migrations
 (including replacements). Link stack-specific checklists, e.g.
-`Docs/agents/review-checklist.md`.
+`Docs/agents/review-checklist.md`. Optionally list critical flows whose bugs
+always count as Impact for `issue-diagnose`.

@@ -23,6 +23,7 @@ Claim and post without approval **unless**:
 - Scope widens or a `## Notes` constraint breaks.
 - A split, existing-data migration/backfill, public contract change, or security/permission decision is needed.
 - The What remains ambiguous after code exploration.
+- A bug's RCA concludes needs evidence: ask for the named evidence.
 
 At the gate, ask the specific decision with a recommendation and stop; non-interactive workers return plan/decision points without waiting, claiming, or posting. Otherwise report the chosen approach and rejected alternatives.
 
@@ -46,9 +47,19 @@ After each transition repeat the complete lookup; report verified status. Missin
 
 Claim only ready -> in-progress; re-read after transition and yield if status changed under you. Backlog: route to `issue-refine`. In progress / in review / done or any existing ledger: stop as `claimed`, even ready/boardless. Never infer a crashed run; resume requires explicit user authorization, not batch dispatch.
 
-Sole coordinator exception: one **same-cycle blocked-plan repair**. Require `dev-cycle`'s issue URL, ledger REST id/link, current-cycle claim/explicit-resume evidence, and implementation blockers. Verify the ledger and in-progress or `board: none`; edit only that ledger under the same Approval Gate. No re-claim, second ledger, or takeover of unrelated/parked runs. Second blocker or unresolved decision: stop the cycle.
+Sole coordinator exception: one **same-cycle blocked-plan repair**. Require `dev-cycle`'s issue URL, ledger REST id/link, current-cycle claim/explicit-resume evidence, and either implementation blockers or a `code-review` needs-diagnosis finding. Verify the ledger and in-progress (blockers), in-review (finding), or `board: none`; edit only that ledger under the same Approval Gate. Blockers contradicting the RCA, or showing a bug without one meets the criteria: return `needs diagnosis` without editing; repair after re-diagnosis. Re-diagnosed cause and Approach both unchanged: report `unchanged`, edit nothing. No re-claim, second ledger, or takeover of unrelated/parked runs. Second blocker or unresolved decision: stop the cycle.
 
 Simultaneous claimants use the ledger tie-break: after posting, re-fetch all comment pages. Another ledger with a lower numeric REST id: delete only yours (`gh api -X DELETE /repos/<owner>/<repo>/issues/comments/<your-comment-id>`), report `claimed`, leave status alone.
+
+## Bugs
+
+Bugs and criteria per `issue-diagnose` § Criteria; check during step 3, before any claim.
+
+- No `<!-- root-cause -->` comment and a criterion applies: stop and report `needs diagnosis` with the criteria; no claim or ledger.
+- **needs refinement** and the body lacks the requested change: stop before claiming and report it for `issue-refine` (standalone: continue with `issue-refine` here under its approval gate, then resume). Once the body reflects it, continue on the chain's end below.
+- **needs evidence**, or a chain with no actionable cause: Approval Gate.
+- **actionable cause**: `## Approach` names that cause in one line and links the RCA; the first task implements its Proof (fails on base, passes after the fix task); open questions past the cause go to `## Risks`.
+- Smallest correction: repair the existing responsibility, reuse an existing mechanism, or remove an unnecessary requirement before adding anything. A new mechanism states what the existing one cannot represent and the lasting obligations it adds or retires.
 
 ## Workflow
 
@@ -60,8 +71,8 @@ Simultaneous claimants use the ledger tie-break: after posting, re-fetch all com
    ```
 
 2. Target `## Expected outcome`; obey `## Notes`. Unclear What: stop for `issue-refine`. Several issues: refine into native sub-issues, retain parent, then plan each child.
-3. Explore affected code, existing patterns, dependent contracts/data, tests, and § Build & Validation commands. Follow conventions unless changing them is the issue; never invent paths.
-4. Enumerate viable approaches; choose the smallest meeting acceptance criteria and give one-line rejections of alternatives. Specify interface/contract/data/config changes, compatibility/migration needs, validation, risks and containment.
+3. Explore affected code, existing patterns, dependent contracts/data, tests, and § Build & Validation commands. Follow conventions unless changing them is the issue; never invent paths. Bugs: apply § Bugs.
+4. Enumerate viable approaches; choose the smallest meeting acceptance criteria (bugs: § Bugs smallest correction) and give one-line rejections of alternatives. Specify interface/contract/data/config changes, compatibility/migration needs, validation, risks and containment.
 5. Make minimal independently implementable/verifiable tasks with code area and validation signal; dependency-order them and mark parallelism.
 6. Apply the Approval Gate; if it triggers, present and stop.
 7. Claim unless explicit `board: none`, authorized resume, or verified same-cycle repair. Boardless creation: re-check no ledger exists; ledger/tie-break signal ownership.

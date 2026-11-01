@@ -25,6 +25,8 @@ Parallel work does not imply background permission. Use concurrent foreground ca
 
 | Phase | Role | Skill | Skipped when |
 |---|---|---|---|
+| Diagnose (as needed) | `architect` | `issue-diagnose` | no phase reports `needs diagnosis` |
+| Refine (as needed) | `project-manager` | `issue-refine` | the issue is ready and no RCA concludes needs refinement |
 | 1. Plan | `architect` | `issue-plan` | the user explicitly asked to resume an already-planned issue |
 | 2. Implement | `developer` | `issue-implement` | explicit resume with an existing delivery PR goes to review |
 | 3. Review + merge | `architect`, distinct from phase 2 | `code-review` (PR mode) | never |
@@ -37,6 +39,8 @@ Parallel work does not imply background permission. Use concurrent foreground ca
 ## Phase Prompts
 
 ```text
+Diagnose: Run issue-diagnose on issue <number> (<url>). [Re-diagnosis authorized by this cycle; RCA REST id: <...>; trigger: <blocker or review finding>.] Return RCA link/REST id, conclusion, criteria, refinement or evidence needed.
+Refine: Run issue-refine on issue <number> (<url>). [Apply the RCA's requested change: <...>.] [Approved: <user go-ahead>.] Return proposal and questions, or the applied refinement and verified status.
 Plan: Run issue-plan on issue <number> (<url>). Return ledger link, approach, task count, blockers/decisions.
 Implement: Run issue-implement initial mode on issue <number> (<url>). Claim/resume evidence; ledger REST id/link: <...>. [Owned scope: <files/modules>.] Validation: <§ Build & Validation>. Return PR URL, paths, ledger state, validation output, risks.
 Review: Run code-review PR mode on PR <number>, round <n>. Merge iff criteria hold; perform after-merge steps. Return assessment, comment URL, merge/blocker, board transition, cleanup.
@@ -45,10 +49,10 @@ Revise: Run issue-implement revision mode on PR <number> (issue <n>, <url>). Cur
 
 ## Flow
 
-1. Load issue (`gh issue view <n> --repo <repo-slug> --json number,title,body,state,url`), complete board lookup, and all REST ledger comments per `issue-plan`. Closed/done: finished, stop. Existing ledger or in-progress/in-review: `claimed`, stop unless explicitly user-authorized resume, even boardless; batch dispatch is not authorization. Backlog/unrefined: `issue-refine`. Authorized resume with delivery PR goes to review, not initial implementation: first verify unique ledger, open PR identity, exact intended closing reference, and in-review or `board: none`. In-review without matching PR blocks.
-2. **Plan**, unless explicit resume. `claimed`: report/stop. Decisions instead of ledger: return to user/batch coordinator and stop, never answer for the architect. Confirm unique ledger and in-progress or `board: none`; retain claim/resume evidence and ledger REST id/link for handoffs.
-3. **Implement.** Require fully resolving PR URL, exact closing-reference verification per `issue-implement`, validation output, and verified in-review or `board: none`. Blocked: return ledger once to architect in `issue-plan` same-cycle blocked-plan repair mode, with ownership evidence/blockers. Continue only after ledger blockers clear; decisions or repeated blocker stop, never generic auto-resume.
-4. **Review**, round 1. Merged: finish. Critical/High: revise. Otherwise any unmet merge criterion, including important Medium findings: report the blocker and leave the PR open for the user.
+1. Load issue (`gh issue view <n> --repo <repo-slug> --json number,title,body,state,url`), complete board lookup, and all REST ledger comments per `issue-plan`. Closed/done: finished, stop. Existing ledger or in-progress/in-review: `claimed`, stop unless explicitly user-authorized resume, even boardless; batch dispatch is not authorization. Backlog/unrefined: `issue-refine`; it reports needs diagnosis: Diagnose, then refine again. Authorized resume with delivery PR goes to review, not initial implementation: first verify unique ledger, open PR identity, exact intended closing reference, and in-review or `board: none`. In-review without matching PR blocks.
+2. **Plan**, unless explicit resume. `claimed`: report/stop. Decisions instead of ledger: return to user/batch coordinator and stop, never answer for the architect. `needs diagnosis`: Diagnose, then plan again. RCA needs refinement: Refine with the requested change, holding the user's approval, then plan again; once per RCA, a second request stops and reports both. Confirm unique ledger and in-progress or `board: none`; retain claim/resume evidence and ledger REST id/link for handoffs.
+3. **Implement.** Require fully resolving PR URL, exact closing-reference verification per `issue-implement`, validation output, and verified in-review or `board: none`. Blocked: return ledger once to architect in `issue-plan` same-cycle blocked-plan repair mode, with ownership evidence/blockers. Architect returns `needs diagnosis`: Diagnose with this cycle's authorization, then finish the same repair. Continue only after ledger blockers clear; decisions or repeated blocker stop, never generic auto-resume.
+4. **Review**, round 1. Merged: finish. Needs diagnosis (takes precedence): Diagnose with this cycle's authorization, run the blocked-plan repair with the review finding, then Revise with the ledger's changed tasks as findings; this spends the cycle's single repair and one revision round. Repair already used, a second needs diagnosis, or `unchanged`: park with both positions. Critical/High: revise. Otherwise any unmet merge criterion, including important Medium findings: report the blocker and leave the PR open for the user.
 5. **Revise**, at most twice (review rounds 2/3). Developer fixes enumerated findings only; fresh architect re-reviews against prior comment. Contest ends loop immediately for human decision. Cap/contest: park PR with round, exit reason, both positions.
 6. **Report**: issue/PR URLs, ledger link/approach, merge commit or parked round/reason or unmet criterion, verified board status, validation, residual risks, incomplete work.
 
