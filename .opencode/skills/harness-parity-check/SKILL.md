@@ -9,7 +9,7 @@ Use for requested verification, audits, reviews, or sanity checks of MetaSkills 
 
 ## Goals
 
-- Enforce `AGENTS.md`'s project-fact, thin same-name `$ARGUMENTS` wrapper, identical three-dialect role-body, and installer invariants.
+- Enforce `AGENTS.md`'s project-fact, thin same-name `$ARGUMENTS` wrapper, identical four-dialect role-body, and installer invariants.
 - One owner per mechanic: `issue-plan` owns board transitions/ledger creation; `issue-raise`, sub-issue linking; `issue-implement`, worktrees/PRs; `code-review`, review worktree/merge; `dev-cycle`, revision-loop bound. Others reference, never restate.
 - Preserve boundaries: `issue-refine` never designs; `issue-plan` is architect-only; `issue-implement` never plans/claims; `dev-cycle` and `burndown` never code, post plans, transition boards, or merge.
 - Installed managed files match `README.md`.
@@ -27,7 +27,7 @@ Use for requested verification, audits, reviews, or sanity checks of MetaSkills 
 
 3. Read changed `SKILL.md` files fully: no embedded project facts, including stack-specific tooling/idioms; resolve required facts from named consuming-project `AGENTS.md` sections, applying the missing-section rule.
 
-4. Diff changed role bodies across all three dialects; body differences are findings.
+4. Diff changed role bodies across all four dialects; body differences are findings.
 
 5. For added/renamed/removed files, verify `README.md`'s managed set. Installers auto-discover files and remove stale installs through manifests.
 

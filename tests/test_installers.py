@@ -20,8 +20,9 @@ import unittest
 REPO = Path(__file__).resolve().parents[1]
 MANIFEST = '.metaskills-manifest'
 ROOTS = ('.claude/skills', '.config/opencode/skill', '.codex/skills',
-         '.config/opencode/command', '.codex/prompts',
-         '.config/opencode/agent', '.claude/agents', '.codex/agents')
+         '.gemini/config/skills', '.config/opencode/command', '.codex/prompts',
+         '.config/opencode/agent', '.claude/agents', '.gemini/config/agents',
+         '.codex/agents')
 POWERSHELL = shutil.which('powershell.exe') if os.name == 'nt' else None
 PWSH = shutil.which('pwsh') if os.name == 'nt' else None
 SYMLINK_SKIP_ERRNOS = tuple(
@@ -95,7 +96,7 @@ class InstallerCases:
         write(self.repo / 'skills/demo/SKILL.md',
               '---\nname: demo\ndescription: Fixture skill\n---\nBody\n')
         write(self.repo / 'commands/demo.md', 'Use demo with $ARGUMENTS\n')
-        for dialect in ('claude', 'opencode'):
+        for dialect in ('claude', 'opencode', 'antigravity'):
             write(self.repo / f'agents/{dialect}/worker.md', '---\nname: worker\n---\nBody\n')
         write(self.repo / 'agents/codex/worker.toml', "developer_instructions = '''\nBody\n'''\n")
         subprocess.run(['git', 'init', '-q', str(self.repo)], env=self.env, check=True)
@@ -383,11 +384,18 @@ class InstallerCases:
                       self.run_installer('check', success=False))
         self.assert_rejected_read_only('agents/worker: claude and codex bodies differ')
 
+        write(self.repo / 'agents/codex/worker.toml', "developer_instructions = '''\nBody\n'''\n")
+        write(self.repo / 'agents/antigravity/worker.md', '---\nname: worker\n---\nDifferent\n')
+        self.assertIn('agents/worker: claude and antigravity bodies differ',
+                      self.run_installer('check', success=False))
+        self.assert_rejected_read_only('agents/worker: claude and antigravity bodies differ')
+
     def test_agent_missing_dialect(self):
         files = {
             'claude': ('agents/claude/extra.md', '---\nname: extra\n---\nBody\n'),
             'opencode': ('agents/opencode/extra.md', '---\nname: extra\n---\nBody\n'),
             'codex': ('agents/codex/extra.toml', "developer_instructions = '''\nBody\n'''\n"),
+            'antigravity': ('agents/antigravity/extra.md', '---\nname: extra\n---\nBody\n'),
         }
         for missing_dialect, (missing_rel, _) in files.items():
             with self.subTest(missing=missing_dialect):

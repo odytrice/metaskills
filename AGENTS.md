@@ -4,15 +4,15 @@ MetaSkills version: 1.1.0
 
 ## Project Overview
 
-MetaSkills owns the user's canonical shared skills, command wrappers, and agent roles, installed into Claude Code, opencode, and Codex user-level configs.
+MetaSkills owns the user's canonical shared skills, command wrappers, and agent roles, installed into Claude Code, opencode, Codex, and Antigravity user-level configs.
 
 Canonical skills are project-agnostic: resolve facts from the consuming project's `AGENTS.md` under `AGENTS.template.md`; stop rather than guess missing facts. Never embed repo slugs, board IDs, branch defaults, environment URLs, cluster/image names, credentials, deployment facts, or local-machine-only paths.
 
 ## Code Layout & Tech Stack
 
-- `skills/<name>/SKILL.md`: canonical skills shared across all three harnesses.
-- `commands/<name>.md`: thin same-named skill + `$ARGUMENTS` handoffs for opencode commands and Codex prompts, never duplicated workflows. Claude Code uses skills directly as slash commands; no wrapper copies.
-- `agents/opencode/*.md`, `agents/claude/*.md`, `agents/codex/*.toml`: subagent/role definitions with identical bodies across dialects; configuration syntax differs.
+- `skills/<name>/SKILL.md`: canonical skills shared across all four harnesses.
+- `commands/<name>.md`: thin same-named skill + `$ARGUMENTS` handoffs for opencode commands and Codex prompts, never duplicated workflows. Claude Code and Antigravity use skills directly as slash commands; no wrapper copies.
+- `agents/opencode/*.md`, `agents/claude/*.md`, `agents/codex/*.toml`, `agents/antigravity/*.md`: subagent/role definitions with identical bodies across dialects; configuration syntax differs.
 - `AGENTS.template.md`: required consuming-project contract, including the MetaSkills version and its change list. Bump minor when projects must update their `AGENTS.md` or issue templates, patch for low-impact changes, major for pride releases.
 - `sync.ps1`, `sync.sh`: managed harness installers.
 - `.opencode/skills/`: OpenCode-only repository maintenance. Mirror into `skills/` only if behavior should install globally.
@@ -24,7 +24,7 @@ Mostly Markdown, TOML, PowerShell, and Bash, plus the `paper-doc` browser assets
 Update affected surfaces together:
 
 - Skills: canonical `skills/<name>/SKILL.md`; commands only when handoffs change.
-- Roles: all three dialects.
+- Roles: all four dialects.
 - Installation: both sync scripts, including added/renamed/removed managed files.
 - Layout, installation, or workflows: `README.md`.
 - Anything projects must change: `AGENTS.template.md` version bump and change entry, plus this file's version line.
@@ -47,7 +47,7 @@ For Unix-shell changes, also review `sync.sh` and run when Bash is available:
 ./sync.sh --dry-run
 ```
 
-`--check` / `-Check` verifies skill frontmatter (`name`, `description`), bidirectional skill/command pairing, three-dialect agent body parity, PowerShell-only shell samples, and em/en dashes. Both scripts must report identical findings.
+`--check` / `-Check` verifies skill frontmatter (`name`, `description`), bidirectional skill/command pairing, four-dialect agent body parity, PowerShell-only shell samples, and em/en dashes. Both scripts must report identical findings.
 
 Run `python tests/test_installers.py` on Windows or `python3 tests/test_installers.py` on Linux (bare or container) for isolated installer regression tests. On Windows, the suite auto-discovers available PowerShell runtimes (Windows PowerShell 5.1 `powershell.exe` and PowerShell 7+ `pwsh`), runs unprivileged NTFS junction and hard-link checks, skips only privilege-gated symlink cases when symlink creation is unavailable, and skips `BashTests`. On Linux/Unix, it runs `BashTests` against `sync.sh` and skips PowerShell suites. Installer tests must cover hard-linked metadata as well as symlinks/junctions, and byte-sensitive fixtures must avoid platform newline translation. `tests/workflow-scenarios.md` contains manual instruction evaluations, not executable behavioral tests.
 

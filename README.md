@@ -1,17 +1,17 @@
 # metaskills
 
 A single, canonical agent harness (skills, commands, and agent roles) shared
-across three coding-agent harnesses with as much parity as each allows:
+across four coding-agent harnesses with as much parity as each allows:
 
-| | Claude Code (`~/.claude`) | opencode (`~/.config/opencode`) | Codex (`~/.codex`) |
-|---|---|---|---|
-| **Skills** | `skills/<name>/` | `skill/<name>/` | `skills/<name>/` |
-| **Commands** | not used (skills double as `/<name>` slash commands) | `command/*.md` | `prompts/*.md` |
-| **Agents** | `agents/*.md` (Claude dialect) | `agent/*.md` (opencode dialect) | `agents/*.toml` (Codex dialect) |
+| | Claude Code (`~/.claude`) | opencode (`~/.config/opencode`) | Codex (`~/.codex`) | Antigravity (`~/.gemini/config`) |
+|---|---|---|---|---|
+| **Skills** | `skills/<name>/` | `skill/<name>/` | `skills/<name>/` | `skills/<name>/` |
+| **Commands** | not used (skills double as `/<name>` slash commands) | `command/*.md` | `prompts/*.md` | not used (skills double as `/<name>` slash commands) |
+| **Agents** | `agents/*.md` (Claude dialect) | `agent/*.md` (opencode dialect) | `agents/*.toml` (Codex dialect) | `agents/*.md` (Antigravity dialect) |
 
-Skills are written once and installed verbatim into all three harnesses.
+Skills are written once and installed verbatim into all four harnesses.
 Commands are thin `$ARGUMENTS` wrappers around same-named skills. Agent role
-definitions exist in three dialects with identical bodies; only the
+definitions exist in four dialects with identical bodies; only the
 frontmatter/permission syntax differs.
 
 ## Design
@@ -26,12 +26,15 @@ PowerShell.
 
 **Agents are thin.** Each role is identity, which skill to load, the
 permission envelope, and what to return; nothing from the skill is restated.
-The three dialect bodies are byte-identical; `sync.sh --check` verifies it.
+The four dialect bodies are byte-identical; `sync.sh --check` and
+`.\sync.ps1 -Check` verify it.
 
 Permission envelopes are not identical: OpenCode uses per-tool/path rules,
-Claude exposes tool allowlists, and Codex uses sandbox and approval settings.
-Matching prose does not prove capability parity; validate effective permissions
-in each harness before relying on a role boundary.
+Claude exposes tool allowlists, Codex uses sandbox and approval settings, and
+Antigravity uses `subagent`/`mainAgent` flags plus `commandExecutionPolicy`
+while inheriting parent scopes (omitting `tools` to avoid cross-surface tool
+name mismatches). Matching prose does not prove capability parity; validate
+effective permissions in each harness before relying on a role boundary.
 
 **Token budget.** Skill descriptions are loaded into every session, so they
 say only what the skill does and when to trigger it. Rules live in exactly
@@ -41,10 +44,12 @@ project live in the `qa` skill, not in each project's AGENTS.md.
 **Claude Code projects** additionally need a `CLAUDE.md` whose first line is
 `@AGENTS.md` so the same contract is loaded there.
 
-**Precedence:** all three harnesses resolve project-level config over
-user-level, so a project can still override any skill locally by shipping its
-own copy (e.g. a project-specific `agent-login` that the project's
-`AGENTS.md § Agent Login` points to).
+**Precedence:** all four harnesses resolve project-level config over
+user-level (in Antigravity, `.agents/` over `~/.gemini/config/`), so a project
+can still override any skill locally by shipping its own copy (e.g. a
+project-specific `agent-login` that the project's `AGENTS.md § Agent Login`
+points to). Antigravity reads `AGENTS.md` natively, so consuming projects need
+no extra shim file.
 
 ## Layout
 
@@ -56,8 +61,9 @@ agents/
   opencode/    mode/permission frontmatter dialect (.md)
   claude/      name/description/tools frontmatter dialect (.md)
   codex/       name/description/developer_instructions dialect (.toml)
+  antigravity/ name/description/subagent/commandExecutionPolicy dialect (.md)
 AGENTS.template.md   the per-project AGENTS.md contract
-sync.ps1       installs everything into ~/.claude, ~/.config/opencode, ~/.codex
+sync.ps1       installs into ~/.claude, ~/.config/opencode, ~/.codex, ~/.gemini/config
 sync.sh        same installer for macOS/Linux
 tests/         installer and document regressions, plus manual workflow scenarios
 docs/          GitHub Pages site: the illustrated workflow guide (not installed)
@@ -84,7 +90,7 @@ and the ledger.
 
 The [workflow guide](https://odytrice.github.io/metaskills/) walks through
 this lifecycle with diagrams, starting from the four agents: who hands work
-to whom, which agent owns each status move, how the thirteen skills group,
+to whom, which agent owns each status move, how the fourteen skills group,
 `dev-cycle` and `burndown` step by step, and the shared rules.
 Its source is `docs/index.html`, a single paper-doc page with the PlantUML or
 draw.io source of each diagram embedded beside the figure. It describes the skills at
@@ -173,8 +179,8 @@ ruled sections, red accents, and responsive layouts.
 
 ### Use the skill
 
-After [installing](#install), invoke `paper-doc` in your harness. In Claude Code
-and opencode, examples are:
+After [installing](#install), invoke `paper-doc` in your harness. In Claude Code,
+opencode, and Antigravity, examples are:
 
 ```text
 /paper-doc Document this project's architecture with C1, C2, and a focused C3 view.
@@ -233,20 +239,21 @@ the content and diagrams continue to work. The runtime respects reduced motion,
 and essential prose remains available with JavaScript disabled.
 
 Both sync scripts discover `skills/paper-doc/` and `commands/paper-doc.md`
-automatically. The complete skill tree is installed into all three harnesses;
-the wrapper goes to opencode commands and Codex prompts. Claude Code invokes
-the skill directly. Managed manifests handle future updates and renames.
+automatically. The complete skill tree is installed into all four harnesses;
+the wrapper goes to opencode commands and Codex prompts. Claude Code and
+Antigravity invoke the skill directly. Managed manifests handle future updates
+and renames.
 
 ## Install
 
 ```powershell
-.\sync.ps1          # install/update all three harnesses (Windows)
+.\sync.ps1          # install/update all four harnesses (Windows)
 .\sync.ps1 -WhatIf  # preview
 .\sync.ps1 -Check   # lint the repo (frontmatter, skill/wrapper pairing both ways, dialect parity)
 ```
 
 ```bash
-./sync.sh           # install/update all three harnesses (macOS/Linux)
+./sync.sh           # install/update all four harnesses (macOS/Linux)
 ./sync.sh --dry-run # preview
 ./sync.sh --check   # lint the repo (frontmatter, skill/wrapper pairing both ways, dialect parity)
 ```
@@ -264,7 +271,8 @@ before retrying; the installer does not silently adopt or overwrite it. Run only
 one installer at a time: preflight is not a filesystem lock or rollback mechanism.
 
 After syncing new or renamed skills, restart the running harness so it reloads
-the installed definitions. In particular, quit and restart opencode before
+the installed definitions (in Antigravity CLI, `/skills reload` also refreshes
+skills without a restart). In particular, quit and restart opencode before
 using a newly installed command.
 
 ## Validation

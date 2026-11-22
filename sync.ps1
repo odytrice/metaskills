@@ -1,7 +1,8 @@
-# Installs the metaskills harness into all three agent harnesses:
+# Installs the metaskills harness into all four agent harnesses:
 #   Claude Code  -> ~/.claude          (skills, agents)
 #   opencode     -> ~/.config/opencode (skill, agent, command)
 #   Codex        -> ~/.codex           (skills, prompts, agents)
+#   Antigravity  -> ~/.gemini/config   (skills, agents)
 #
 # Only items managed by this repo are touched. Each target directory gets a
 # .metaskills-manifest listing what this repo installed there; on the next run
@@ -25,7 +26,7 @@ function Invoke-Check {
 
     if (-not @(Get-ChildItem (Join-Path $repo 'skills') -Directory).Count) { Fail 'no skills found' }
     if (-not @(Get-ChildItem (Join-Path $repo 'commands') -Filter '*.md').Count) { Fail 'no commands found' }
-    foreach ($dialect in 'claude', 'opencode', 'codex') {
+    foreach ($dialect in 'claude', 'opencode', 'codex', 'antigravity') {
         $extension = if ($dialect -eq 'codex') { '*.toml' } else { '*.md' }
         if (-not @(Get-ChildItem (Join-Path $repo "agents/$dialect") -Filter $extension).Count) { Fail "no $dialect agents found" }
     }
@@ -69,6 +70,7 @@ function Invoke-Check {
         Get-ChildItem (Join-Path $repo 'agents\claude') -Filter '*.md'
         Get-ChildItem (Join-Path $repo 'agents\opencode') -Filter '*.md'
         Get-ChildItem (Join-Path $repo 'agents\codex') -Filter '*.toml'
+        Get-ChildItem (Join-Path $repo 'agents\antigravity') -Filter '*.md'
     ) | ForEach-Object { $_.BaseName } | Sort-Object -Unique
     function Get-MdBody([string]$Path) {
         $lines = @(Get-Content -LiteralPath $Path -Encoding UTF8); $n = 0; $out = @()
@@ -85,15 +87,17 @@ function Invoke-Check {
         $out -join "`n"
     }
     foreach ($role in $roles) {
-        $c = Join-Path $repo "agents\claude\$role.md"; $o = Join-Path $repo "agents\opencode\$role.md"; $x = Join-Path $repo "agents\codex\$role.toml"
+        $c = Join-Path $repo "agents\claude\$role.md"; $o = Join-Path $repo "agents\opencode\$role.md"; $x = Join-Path $repo "agents\codex\$role.toml"; $a = Join-Path $repo "agents\antigravity\$role.md"
         $missing = $false
         if (-not (Test-Path $c)) { Fail "agents/claude/$role.md missing"; $missing = $true }
         if (-not (Test-Path $o)) { Fail "agents/opencode/$role.md missing"; $missing = $true }
         if (-not (Test-Path $x)) { Fail "agents/codex/$role.toml missing"; $missing = $true }
+        if (-not (Test-Path $a)) { Fail "agents/antigravity/$role.md missing"; $missing = $true }
         if ($missing) { continue }
         $cb = Get-MdBody $c
         if ($cb -ne (Get-MdBody $o))   { Fail "agents/${role}: claude and opencode bodies differ" }
         if ($cb -ne (Get-TomlBody $x)) { Fail "agents/${role}: claude and codex bodies differ" }
+        if ($cb -ne (Get-MdBody $a))   { Fail "agents/${role}: claude and antigravity bodies differ" }
     }
 
     if ($script:failures -eq 0) { Write-Host 'check: OK'; return 0 }
@@ -150,14 +154,16 @@ if ($Check) { exit 0 }
 # --- Install -------------------------------------------------------------------
 Assert-Path $env:USERPROFILE
 $targets = @{
-    ClaudeSkills    = Join-Path $env:USERPROFILE '.claude\skills'
-    ClaudeAgents    = Join-Path $env:USERPROFILE '.claude\agents'
-    OpencodeSkills  = Join-Path $env:USERPROFILE '.config\opencode\skill'
-    OpencodeAgents  = Join-Path $env:USERPROFILE '.config\opencode\agent'
-    OpencodeCommand = Join-Path $env:USERPROFILE '.config\opencode\command'
-    CodexSkills     = Join-Path $env:USERPROFILE '.codex\skills'
-    CodexPrompts    = Join-Path $env:USERPROFILE '.codex\prompts'
-    CodexAgents     = Join-Path $env:USERPROFILE '.codex\agents'
+    ClaudeSkills      = Join-Path $env:USERPROFILE '.claude\skills'
+    ClaudeAgents      = Join-Path $env:USERPROFILE '.claude\agents'
+    OpencodeSkills    = Join-Path $env:USERPROFILE '.config\opencode\skill'
+    OpencodeAgents    = Join-Path $env:USERPROFILE '.config\opencode\agent'
+    OpencodeCommand   = Join-Path $env:USERPROFILE '.config\opencode\command'
+    CodexSkills       = Join-Path $env:USERPROFILE '.codex\skills'
+    CodexPrompts      = Join-Path $env:USERPROFILE '.codex\prompts'
+    CodexAgents       = Join-Path $env:USERPROFILE '.codex\agents'
+    AntigravitySkills = Join-Path $env:USERPROFILE '.gemini\config\skills'
+    AntigravityAgents = Join-Path $env:USERPROFILE '.gemini\config\agents'
 }
 
 function Test-Set([string]$Root, [System.IO.FileSystemInfo[]]$Sources) {
@@ -204,10 +210,12 @@ $commands = @(Get-ChildItem (Join-Path $repo 'commands') -Filter '*.md')
 Test-Set $targets.ClaudeSkills $skills
 Test-Set $targets.OpencodeSkills $skills
 Test-Set $targets.CodexSkills $skills
+Test-Set $targets.AntigravitySkills $skills
 Test-Set $targets.OpencodeCommand $commands
 Test-Set $targets.CodexPrompts $commands
 Test-Set $targets.OpencodeAgents (Get-ChildItem (Join-Path $repo 'agents/opencode') -Filter '*.md')
 Test-Set $targets.ClaudeAgents (Get-ChildItem (Join-Path $repo 'agents/claude') -Filter '*.md')
+Test-Set $targets.AntigravityAgents (Get-ChildItem (Join-Path $repo 'agents/antigravity') -Filter '*.md')
 Test-Set $targets.CodexAgents (Get-ChildItem (Join-Path $repo 'agents/codex') -Filter '*.toml')
 
 # Install-Set <root> <sources...>: dirs copied recursively, files copied.
@@ -245,25 +253,27 @@ function Install-Set {
     }
 }
 
-# --- Skills: identical trees for all three harnesses ---------------------------
+# --- Skills: identical trees for all four harnesses ----------------------------
 $skills = Get-ChildItem (Join-Path $repo 'skills') -Directory
-Install-Set $targets.ClaudeSkills   $skills
-Install-Set $targets.OpencodeSkills $skills
-Install-Set $targets.CodexSkills    $skills
+Install-Set $targets.ClaudeSkills      $skills
+Install-Set $targets.OpencodeSkills    $skills
+Install-Set $targets.CodexSkills       $skills
+Install-Set $targets.AntigravitySkills $skills
 Write-Host ("Skills: " + (($skills | ForEach-Object { $_.Name }) -join ', '))
 
 # --- Commands: opencode command/ and Codex prompts/ ----------------------------
-# Claude Code is skipped deliberately: skills are directly invocable as
-# /<name> slash commands there, and a same-named command would collide.
+# Claude Code and Antigravity are skipped deliberately: skills are directly
+# invocable as /<name> slash commands there, so wrapper copies are unnecessary.
 $commands = Get-ChildItem (Join-Path $repo 'commands') -Filter '*.md'
 Install-Set $targets.OpencodeCommand $commands
 Install-Set $targets.CodexPrompts    $commands
 Write-Host ("Commands: " + (($commands | ForEach-Object { $_.BaseName }) -join ', '))
 
 # --- Agents: per-harness dialects ----------------------------------------------
-Install-Set $targets.OpencodeAgents (Get-ChildItem (Join-Path $repo 'agents\opencode') -Filter '*.md')
-Install-Set $targets.ClaudeAgents   (Get-ChildItem (Join-Path $repo 'agents\claude') -Filter '*.md')
-Install-Set $targets.CodexAgents    (Get-ChildItem (Join-Path $repo 'agents\codex') -Filter '*.toml')
+Install-Set $targets.OpencodeAgents    (Get-ChildItem (Join-Path $repo 'agents\opencode') -Filter '*.md')
+Install-Set $targets.ClaudeAgents      (Get-ChildItem (Join-Path $repo 'agents\claude') -Filter '*.md')
+Install-Set $targets.AntigravityAgents (Get-ChildItem (Join-Path $repo 'agents\antigravity') -Filter '*.md')
+Install-Set $targets.CodexAgents       (Get-ChildItem (Join-Path $repo 'agents\codex') -Filter '*.toml')
 Write-Host ("Agents: " + ((Get-ChildItem (Join-Path $repo 'agents\claude') -Filter '*.md' | ForEach-Object { $_.BaseName }) -join ', '))
 
 Write-Host 'Done. Each project needs an AGENTS.md that satisfies AGENTS.template.md'

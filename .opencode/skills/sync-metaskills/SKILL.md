@@ -1,6 +1,6 @@
 ---
 name: sync-metaskills
-description: Preview or install MetaSkills changes into Claude Code, opencode, and Codex via repo sync scripts.
+description: Preview or install MetaSkills changes into Claude Code, opencode, Codex, and Antigravity via repo sync scripts.
 ---
 
 # Sync MetaSkills
@@ -13,6 +13,7 @@ Repo-local maintenance only; never edit canonical `skills/`.
 - Claude Code: `~/.claude/skills`, `~/.claude/agents`.
 - opencode: `~/.config/opencode/skill`, `~/.config/opencode/agent`, `~/.config/opencode/command`.
 - Codex: `~/.codex/skills`, `~/.codex/agents`, `~/.codex/prompts`.
+- Antigravity: `~/.gemini/config/skills`, `~/.gemini/config/agents`.
 
 Each target's `.metaskills-manifest` tracks installs; subsequent runs remove previously listed files no longer shipped. Never touch unrelated user files.
 

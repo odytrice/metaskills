@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Installs the metaskills harness into all three agent harnesses:
+# Installs the metaskills harness into all four agent harnesses:
 #   Claude Code  -> ~/.claude          (skills, agents)
 #   opencode     -> ~/.config/opencode (skill, agent, command)
 #   Codex        -> ~/.codex           (skills, prompts, agents)
+#   Antigravity  -> ~/.gemini/config   (skills, agents)
 #
 # Only items managed by this repo are touched. Each target directory gets a
 # .metaskills-manifest listing what this repo installed there; on the next run
@@ -54,22 +55,25 @@ check() {
     done
 
     local role roles=()
-    for role in "$repo"/agents/claude/*.md "$repo"/agents/opencode/*.md "$repo"/agents/codex/*.toml; do
+    for role in "$repo"/agents/claude/*.md "$repo"/agents/opencode/*.md "$repo"/agents/codex/*.toml "$repo"/agents/antigravity/*.md; do
         role="$(basename "$role")"; role="${role%.*}"
         roles+=("$role")
     done
     md_body()   { awk 'f{print} /^---$/{n++; if(n==2) f=1}' "$1" | sed '/./,$!d'; }
     toml_body() { awk "/^'''\$/{f=0} f{print} /^developer_instructions = '''\$/{f=1}" "$1"; }
     for role in $(printf '%s\n' "${roles[@]}" | sort -u); do
-        [[ -f "$repo/agents/claude/$role.md" ]]     || { fail "agents/claude/$role.md missing"; continue; }
-        [[ -f "$repo/agents/opencode/$role.md" ]]   || { fail "agents/opencode/$role.md missing"; continue; }
-        [[ -f "$repo/agents/codex/$role.toml" ]]    || { fail "agents/codex/$role.toml missing"; continue; }
-        local c o x
+        [[ -f "$repo/agents/claude/$role.md" ]]      || { fail "agents/claude/$role.md missing"; continue; }
+        [[ -f "$repo/agents/opencode/$role.md" ]]    || { fail "agents/opencode/$role.md missing"; continue; }
+        [[ -f "$repo/agents/codex/$role.toml" ]]     || { fail "agents/codex/$role.toml missing"; continue; }
+        [[ -f "$repo/agents/antigravity/$role.md" ]] || { fail "agents/antigravity/$role.md missing"; continue; }
+        local c o x a
         c="$(md_body "$repo/agents/claude/$role.md")"
         o="$(md_body "$repo/agents/opencode/$role.md")"
         x="$(toml_body "$repo/agents/codex/$role.toml")"
+        a="$(md_body "$repo/agents/antigravity/$role.md")"
         [[ "$c" == "$o" ]] || fail "agents/$role: claude and opencode bodies differ"
         [[ "$c" == "$x" ]] || fail "agents/$role: claude and codex bodies differ"
+        [[ "$c" == "$a" ]] || fail "agents/$role: claude and antigravity bodies differ"
     done
 
     if (( failures == 0 )); then
@@ -129,6 +133,8 @@ opencode_command="$HOME/.config/opencode/command"
 codex_skills="$HOME/.codex/skills"
 codex_prompts="$HOME/.codex/prompts"
 codex_agents="$HOME/.codex/agents"
+antigravity_skills="$HOME/.gemini/config/skills"
+antigravity_agents="$HOME/.gemini/config/agents"
 manifest_name=".metaskills-manifest"
 
 preflight_set() {
@@ -172,10 +178,12 @@ skill_dirs=(); for s in "$repo"/skills/*/; do skill_dirs+=("${s%/}"); done
 preflight_set "$claude_skills" "${skill_dirs[@]}"
 preflight_set "$opencode_skills" "${skill_dirs[@]}"
 preflight_set "$codex_skills" "${skill_dirs[@]}"
+preflight_set "$antigravity_skills" "${skill_dirs[@]}"
 preflight_set "$opencode_command" "$repo"/commands/*.md
 preflight_set "$codex_prompts" "$repo"/commands/*.md
 preflight_set "$opencode_agents" "$repo"/agents/opencode/*.md
 preflight_set "$claude_agents" "$repo"/agents/claude/*.md
+preflight_set "$antigravity_agents" "$repo"/agents/antigravity/*.md
 preflight_set "$codex_agents" "$repo"/agents/codex/*.toml
 
 join_list() {
@@ -217,25 +225,27 @@ install_set() {
     fi
 }
 
-# --- Skills: identical trees for all three harnesses ---------------------------
-install_set "$claude_skills"   "${skill_dirs[@]}"
-install_set "$opencode_skills" "${skill_dirs[@]}"
-install_set "$codex_skills"    "${skill_dirs[@]}"
+# --- Skills: identical trees for all four harnesses ----------------------------
+install_set "$claude_skills"      "${skill_dirs[@]}"
+install_set "$opencode_skills"    "${skill_dirs[@]}"
+install_set "$codex_skills"       "${skill_dirs[@]}"
+install_set "$antigravity_skills" "${skill_dirs[@]}"
 skill_names=(); for s in "${skill_dirs[@]}"; do skill_names+=("$(basename "$s")"); done
 echo "Skills: $(join_list "${skill_names[@]}")"
 
 # --- Commands: opencode command/ and Codex prompts/ ----------------------------
-# Claude Code is skipped deliberately: skills are directly invocable as
-# /<name> slash commands there, and a same-named command would collide.
+# Claude Code and Antigravity are skipped deliberately: skills are directly
+# invocable as /<name> slash commands there, so wrapper copies are unnecessary.
 install_set "$opencode_command" "$repo"/commands/*.md
 install_set "$codex_prompts"    "$repo"/commands/*.md
 command_names=(); for c in "$repo"/commands/*.md; do command_names+=("$(basename "$c" .md)"); done
 echo "Commands: $(join_list "${command_names[@]}")"
 
 # --- Agents: per-harness dialects ----------------------------------------------
-install_set "$opencode_agents" "$repo"/agents/opencode/*.md
-install_set "$claude_agents"   "$repo"/agents/claude/*.md
-install_set "$codex_agents"    "$repo"/agents/codex/*.toml
+install_set "$opencode_agents"    "$repo"/agents/opencode/*.md
+install_set "$claude_agents"      "$repo"/agents/claude/*.md
+install_set "$antigravity_agents" "$repo"/agents/antigravity/*.md
+install_set "$codex_agents"       "$repo"/agents/codex/*.toml
 agent_names=(); for a in "$repo"/agents/claude/*.md; do agent_names+=("$(basename "$a" .md)"); done
 echo "Agents: $(join_list "${agent_names[@]}")"
 

@@ -361,7 +361,7 @@ skinparam LegendFontSize 11
       <div class="mast-grid">
         <div>
           <ul class="facts">
-            <li><span class="k">Repository</span><span><a href="https://github.com/odytrice/metaskills">github.com/odytrice/metaskills</a>. Clone it and run <code>.\sync.ps1</code> on Windows or <code>./sync.sh</code> on macOS and Linux to install into all three harnesses.</span></li>
+            <li><span class="k">Repository</span><span><a href="https://github.com/odytrice/metaskills">github.com/odytrice/metaskills</a>. Clone it and run <code>.\sync.ps1</code> on Windows or <code>./sync.sh</code> on macOS and Linux to install into all four harnesses.</span></li>
             <li><span class="k">Purpose</span><span id="doc-purpose">Explain who does the work, and how the skills compose into one workflow</span></li>
             <li><span class="k">Audience</span><span id="doc-audience">Anyone running or adopting the MetaSkills harness</span></li>
             <li><span class="k">Source</span><span>The fourteen <code>SKILL.md</code> files and four agent definitions at commit 22cc809</span></li>
@@ -465,15 +465,15 @@ skinparam LegendFontSize 11
         <details class="qa mt">
           <summary>How each harness enforces the agents' permissions</summary>
           <div class="a">
-            <p>Each agent's instructions are identical in its Claude Code, opencode, and Codex definition, and lint checks that they match. The permission envelopes differ, because each harness expresses permissions its own way.</p>
+            <p>Each agent's instructions are identical in its Claude Code, opencode, Codex, and Antigravity definition, and lint checks that they match. The permission envelopes differ, because each harness expresses permissions its own way.</p>
             <div class="table-scroll">
               <table class="t">
-                <thead><tr><th scope="col">Agent</th><th scope="col">opencode</th><th scope="col">Claude Code</th><th scope="col">Codex</th></tr></thead>
+                <thead><tr><th scope="col">Agent</th><th scope="col">opencode</th><th scope="col">Claude Code</th><th scope="col">Codex</th><th scope="col">Antigravity</th></tr></thead>
                 <tbody>
-                  <tr><th scope="row">architect</th><td>Edits denied except <code>.tmp-*</code></td><td>Read, Grep, Glob, Bash, Write, Edit, Skill</td><td><code>workspace-write</code></td></tr>
-                  <tr><th scope="row">developer</th><td>Edit and bash allowed</td><td>No tool list, so every tool</td><td><code>workspace-write</code></td></tr>
-                  <tr><th scope="row">project-manager</th><td>Edits only <code>Docs/**</code> and <code>.tmp-*</code>; bash asks, except <code>gh</code>, <code>git log/status/diff</code>, <code>rg</code>, <code>grep</code></td><td>Same tools as architect</td><td><code>workspace-write</code></td></tr>
-                  <tr><th scope="row">quality-assurance</th><td>Edit and bash allowed</td><td>Architect's tools plus <code>mcp__playwright__*</code></td><td><code>danger-full-access</code>, approval <code>never</code></td></tr>
+                  <tr><th scope="row">architect</th><td>Edits denied except <code>.tmp-*</code></td><td>Read, Grep, Glob, Bash, Write, Edit, Skill</td><td><code>workspace-write</code></td><td><code>subagent: true</code>, <code>mainAgent: false</code>, <code>commandExecutionPolicy: sandbox</code></td></tr>
+                  <tr><th scope="row">developer</th><td>Edit and bash allowed</td><td>No tool list, so every tool</td><td><code>workspace-write</code></td><td><code>subagent: true</code>, <code>mainAgent: false</code>, <code>commandExecutionPolicy: sandbox</code></td></tr>
+                  <tr><th scope="row">project-manager</th><td>Edits only <code>Docs/**</code> and <code>.tmp-*</code>; bash asks, except <code>gh</code>, <code>git log/status/diff</code>, <code>rg</code>, <code>grep</code></td><td>Same tools as architect</td><td><code>workspace-write</code></td><td><code>subagent: true</code>, <code>mainAgent: false</code>, <code>commandExecutionPolicy: sandbox</code></td></tr>
+                  <tr><th scope="row">quality-assurance</th><td>Edit and bash allowed</td><td>Architect's tools plus <code>mcp__playwright__*</code></td><td><code>danger-full-access</code>, approval <code>never</code></td><td><code>subagent: true</code>, <code>mainAgent: false</code>, <code>commandExecutionPolicy: sandbox</code></td></tr>
                 </tbody>
               </table>
             </div>
@@ -655,7 +655,7 @@ _None._</code></pre>
             </tbody>
           </table>
         </div>
-        <p class="small muted mt">Every skill has a same-named wrapper in <code>commands/</code> for opencode and Codex. Claude Code invokes the skill directly as <code>/&lt;name&gt;</code>.</p>
+        <p class="small muted mt">Every skill has a same-named wrapper in <code>commands/</code> for opencode and Codex. Claude Code and Antigravity invoke the skill directly as <code>/&lt;name&gt;</code>.</p>
       </div>
     </section>
     <section class="s" id="rules">
@@ -1070,7 +1070,7 @@ b -> b : report claimed; leave the status alone
             <p>The project lives at <a href="https://github.com/odytrice/metaskills">github.com/odytrice/metaskills</a>. Every statement here was read from that repository at commit 22cc809, and the links below point at that commit.</p>
             <ol>
               <li><a href="https://github.com/odytrice/metaskills/tree/22cc809929677a7b337d41b6443389ac33ed78a0/skills">skills/</a>: the fourteen <code>SKILL.md</code> files, plus <code>code-review/checklist.md</code> and <code>output-format.md</code>.</li>
-              <li><a href="https://github.com/odytrice/metaskills/tree/22cc809929677a7b337d41b6443389ac33ed78a0/agents">agents/</a>: the four agents in three dialects.</li>
+              <li><a href="https://github.com/odytrice/metaskills/tree/22cc809929677a7b337d41b6443389ac33ed78a0/agents">agents/</a>: the four agents in four dialects.</li>
               <li><a href="https://github.com/odytrice/metaskills/tree/22cc809929677a7b337d41b6443389ac33ed78a0/commands">commands/</a>: the same-named wrappers.</li>
               <li><a href="https://github.com/odytrice/metaskills/blob/22cc809929677a7b337d41b6443389ac33ed78a0/README.md">README.md</a>: the workflow summary and core mechanics.</li>
               <li><a href="https://github.com/odytrice/metaskills/blob/22cc809929677a7b337d41b6443389ac33ed78a0/AGENTS.template.md">AGENTS.template.md</a>: the sections and conventions every consuming project provides.</li>
