@@ -34,12 +34,12 @@ function Invoke-Check {
         $name = $dir.Name
         $skill = Join-Path $dir.FullName 'SKILL.md'
         if (-not (Test-Path $skill)) { Fail "skills/$name has no SKILL.md"; continue }
-        $text = Get-Content $skill -Raw
+        $text = Get-Content -LiteralPath $skill -Raw -Encoding UTF8
         if ($text -notmatch "(?m)^name: $([regex]::Escape($name))\r?`$") { Fail "skills/$name/SKILL.md frontmatter name != '$name'" }
         if ($text -notmatch '(?m)^description: .') { Fail "skills/$name/SKILL.md has no description" }
         foreach ($md in Get-ChildItem $dir.FullName -Filter '*.md') {
             $rel = "skills/$name/$($md.Name)"
-            $lines = Get-Content $md.FullName
+            $lines = @(Get-Content -LiteralPath $md.FullName -Encoding UTF8)
             for ($i = 0; $i -lt $lines.Count; $i++) {
                 if ($lines[$i] -match '^```powershell') { Fail "powershell fence in ${rel}:$($i + 1)" }
                 if ($lines[$i] -match '^\s*(Set-Location|Set-Content|Remove-Item|Out-File)\b|gh --%') { Fail "PowerShell-only command in ${rel}:$($i + 1)" }
@@ -52,8 +52,8 @@ function Invoke-Check {
     $tracked = & git -C $repo ls-files --cached --others --exclude-standard
     foreach ($rel in $tracked) {
         $path = Join-Path $repo $rel
-        if (-not (Test-Path $path -PathType Leaf)) { continue }
-        $lines = Get-Content $path
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
+        $lines = @(Get-Content -LiteralPath $path -Encoding UTF8)
         for ($i = 0; $i -lt $lines.Count; $i++) {
             if ($lines[$i] -match '[\u2014\u2013]') { Fail "em/en dash in ${rel}:$($i + 1)" }
         }
@@ -62,21 +62,21 @@ function Invoke-Check {
     foreach ($cmd in Get-ChildItem (Join-Path $repo 'commands') -Filter '*.md') {
         $name = $cmd.BaseName
         if (-not (Test-Path (Join-Path $repo "skills\$name"))) { Fail "commands/$name.md has no skills/$name" }
-        if ((Get-Content $cmd.FullName -Raw) -notmatch '\$ARGUMENTS') { Fail "commands/$name.md does not pass `$ARGUMENTS" }
+        if ((Get-Content -LiteralPath $cmd.FullName -Raw -Encoding UTF8) -notmatch '\$ARGUMENTS') { Fail "commands/$name.md does not pass `$ARGUMENTS" }
     }
 
     $roles = @(
         Get-ChildItem (Join-Path $repo 'agents\claude') -Filter '*.md'
         Get-ChildItem (Join-Path $repo 'agents\opencode') -Filter '*.md'
         Get-ChildItem (Join-Path $repo 'agents\codex') -Filter '*.toml'
-    ) | ForEach-Object BaseName | Sort-Object -Unique
+    ) | ForEach-Object { $_.BaseName } | Sort-Object -Unique
     function Get-MdBody([string]$Path) {
-        $lines = Get-Content $Path; $n = 0; $out = @()
+        $lines = @(Get-Content -LiteralPath $Path -Encoding UTF8); $n = 0; $out = @()
         foreach ($l in $lines) { if ($l -eq '---') { $n++; continue }; if ($n -ge 2) { $out += $l } }
         ($out -join "`n").TrimStart("`n")
     }
     function Get-TomlBody([string]$Path) {
-        $lines = Get-Content $Path; $in = $false; $out = @()
+        $lines = @(Get-Content -LiteralPath $Path -Encoding UTF8); $in = $false; $out = @()
         foreach ($l in $lines) {
             if ($l -eq "'''") { $in = $false; continue }
             if ($in) { $out += $l }
@@ -191,7 +191,7 @@ function Test-Set([string]$Root, [System.IO.FileSystemInfo[]]$Sources) {
         Assert-Path $dest
         if ((Test-Path -LiteralPath $dest) -and $owned -cnotcontains $src.Name) { throw "unmanaged collision: $dest" }
     }
-    foreach ($name in (@($Sources | ForEach-Object Name) + $owned)) {
+    foreach ($name in (@($Sources | ForEach-Object { $_.Name }) + $owned)) {
         if (Test-Path -LiteralPath $Root) {
             foreach ($child in Get-ChildItem -LiteralPath $Root -Force) {
                 if ($child.Name -eq $name -and $child.Name -cne $name) { throw "case collision: $($child.FullName)" }
@@ -230,7 +230,7 @@ function Install-Set {
     }
     $manifest = Join-Path $Root $manifestName
     if (Test-Path -LiteralPath $manifest) {
-        foreach ($old in Get-Content -LiteralPath $manifest) {
+        foreach ($old in @(Get-Content -LiteralPath $manifest -Encoding UTF8)) {
             if ($entries -ccontains $old) { continue }
             $stale = Join-Path $Root $old
             if ((Test-Path -LiteralPath $stale) -and $PSCmdlet.ShouldProcess($stale, "remove stale '$old'")) {
@@ -250,7 +250,7 @@ $skills = Get-ChildItem (Join-Path $repo 'skills') -Directory
 Install-Set $targets.ClaudeSkills   $skills
 Install-Set $targets.OpencodeSkills $skills
 Install-Set $targets.CodexSkills    $skills
-Write-Host ("Skills: " + (($skills | ForEach-Object Name) -join ', '))
+Write-Host ("Skills: " + (($skills | ForEach-Object { $_.Name }) -join ', '))
 
 # --- Commands: opencode command/ and Codex prompts/ ----------------------------
 # Claude Code is skipped deliberately: skills are directly invocable as
@@ -258,13 +258,13 @@ Write-Host ("Skills: " + (($skills | ForEach-Object Name) -join ', '))
 $commands = Get-ChildItem (Join-Path $repo 'commands') -Filter '*.md'
 Install-Set $targets.OpencodeCommand $commands
 Install-Set $targets.CodexPrompts    $commands
-Write-Host ("Commands: " + (($commands | ForEach-Object BaseName) -join ', '))
+Write-Host ("Commands: " + (($commands | ForEach-Object { $_.BaseName }) -join ', '))
 
 # --- Agents: per-harness dialects ----------------------------------------------
 Install-Set $targets.OpencodeAgents (Get-ChildItem (Join-Path $repo 'agents\opencode') -Filter '*.md')
 Install-Set $targets.ClaudeAgents   (Get-ChildItem (Join-Path $repo 'agents\claude') -Filter '*.md')
 Install-Set $targets.CodexAgents    (Get-ChildItem (Join-Path $repo 'agents\codex') -Filter '*.toml')
-Write-Host ("Agents: " + ((Get-ChildItem (Join-Path $repo 'agents\claude') -Filter '*.md' | ForEach-Object BaseName) -join ', '))
+Write-Host ("Agents: " + ((Get-ChildItem (Join-Path $repo 'agents\claude') -Filter '*.md' | ForEach-Object { $_.BaseName }) -join ', '))
 
 Write-Host 'Done. Each project needs an AGENTS.md that satisfies AGENTS.template.md'
 Write-Host '(and, for Claude Code, a CLAUDE.md whose first line is @AGENTS.md).'
