@@ -269,10 +269,14 @@ using a newly installed command.
 
 ## Validation
 
-Run `python3 tests/test_installers.py` on Linux or in a Linux container. The
-standard-library suite uses temporary repositories and isolated home directories,
-never live agent configuration. It exercises the Bash installer and skips
-entirely outside Linux; it does not provide PowerShell installer coverage.
+Run `python tests/test_installers.py` on Windows or `python3 tests/test_installers.py`
+on Linux (bare or container). The standard-library suite uses temporary repositories
+and isolated home directories, never live agent configuration. On Windows it
+exercises `sync.ps1` across every installed PowerShell runtime (Windows PowerShell
+5.1 `powershell.exe` and PowerShell 7+ `pwsh`), running unprivileged NTFS junction
+and hard-link checks while explicitly skipping symlink-only cases if Windows symlink
+privileges are unavailable. On Linux/Unix it exercises `sync.sh` and skips the
+PowerShell test classes.
 
 The `paper-doc` regressions run on Windows and Unix without third-party packages
 (Python 3.10+ for scaffolding; Node.js 18+ for the JavaScript tests):

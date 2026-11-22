@@ -49,7 +49,7 @@ For Unix-shell changes, also review `sync.sh` and run when Bash is available:
 
 `--check` / `-Check` verifies skill frontmatter (`name`, `description`), bidirectional skill/command pairing, three-dialect agent body parity, PowerShell-only shell samples, and em/en dashes. Both scripts must report identical findings.
 
-Run `python3 tests/test_installers.py` on Linux (bare or container) for isolated installer regression tests. The suite is Bash-only; Windows and PowerShell coverage were removed, and it skips entirely off Linux. Installer tests must cover hard-linked metadata as well as symlinks, and byte-sensitive fixtures must avoid platform newline translation. `tests/workflow-scenarios.md` contains manual instruction evaluations, not executable behavioral tests.
+Run `python tests/test_installers.py` on Windows or `python3 tests/test_installers.py` on Linux (bare or container) for isolated installer regression tests. On Windows, the suite auto-discovers available PowerShell runtimes (Windows PowerShell 5.1 `powershell.exe` and PowerShell 7+ `pwsh`), runs unprivileged NTFS junction and hard-link checks, skips only privilege-gated symlink cases when symlink creation is unavailable, and skips `BashTests`. On Linux/Unix, it runs `BashTests` against `sync.sh` and skips PowerShell suites. Installer tests must cover hard-linked metadata as well as symlinks/junctions, and byte-sensitive fixtures must avoid platform newline translation. `tests/workflow-scenarios.md` contains manual instruction evaluations, not executable behavioral tests.
 
 For `paper-doc` scaffold or viewer changes, run the dependency-free regressions (Python 3.10+, Node.js 18+):
 
