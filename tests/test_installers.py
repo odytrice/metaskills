@@ -421,12 +421,16 @@ class InstallerCases:
                 path.unlink()
 
     def test_utf8_no_bom_byte_0x97_passes_check_and_install(self):
-        text = 'Markers: \u25cf bullet and \u25c0 arrow\n'
+        text = 'Header line\nMarkers: \u25cf bullet and \u25c0 arrow\n'
+        html = '<div>\n<p>Markers: \u25cf bullet and \u25c0 arrow</p>\n</div>\n'
         raw = text.encode('utf-8')
+        html_raw = html.encode('utf-8')
         self.assertFalse(raw.startswith(b'\xef\xbb\xbf'))
         self.assertIn(b'\x97', raw)
+        self.assertFalse(html_raw.startswith(b'\xef\xbb\xbf'))
+        self.assertIn(b'\x97', html_raw)
         write(self.repo / 'skills/demo/symbols.txt', text)
-        write(self.repo / 'docs/symbols.html', f'<p>{text.strip()}</p>\n')
+        write(self.repo / 'docs/symbols.html', html)
         self.assertIn('check: OK', self.run_installer('check'))
         self.run_installer()
         self.assertEqual((self.home / ROOTS[0] / 'demo/symbols.txt').read_bytes(), raw)
